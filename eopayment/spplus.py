@@ -11,12 +11,15 @@ import logging
 import Crypto.Cipher.DES
 from common import PaymentCommon, URL
 
+__all__ = ['Payment']
+
 KEY_DES_KEY = '\x45\x1f\xba\x4f\x4c\x3f\xd4\x97'
 IV = '\x30\x78\x30\x62\x2c\x30\x78\x30'
 REFERENCE = 'reference'
 ETAT = 'etat'
 ETAT_PAIEMENT_ACCEPTE = '1'
 SPCHECKOK = 'spcheckok'
+LOGGER = logging.getLogger(__name__)
 
 def decrypt_ntkey(ntkey):
     key = binascii.unhexlify(ntkey.replace(' ',''))
@@ -49,6 +52,7 @@ LOGGER = logging.getLogger(__name__)
 
 class Payment(PaymentCommon):
     def __init__(self, options):
+        LOGGER.debug('initializing spplus payment with %s' % options)
         self.cle = options['cle']
         self.siret = options['siret']
         self.devise = '978'
@@ -56,6 +60,8 @@ class Payment(PaymentCommon):
         self.taxe = options.get('taxe', '0.00')
 
     def request(self, montant, email=None, next_url=None):
+        LOGGER.debug('requesting spplus payment with montant %s email=%s and \
+next_url=%s' % (montant, email, next_url))
         reference = self.transaction_id(20, ALPHANUM, 'spplus', self.siret)
         validite = dt.date.today()+dt.timedelta(days=1)
         validite = validite.strftime('%d/%m/%Y')
@@ -75,9 +81,12 @@ class Payment(PaymentCommon):
                        or '?' in next_url:
                    raise ValueError('next_url must be an absolute URL without parameters')
             fields['urlretour'] = next_url
+        LOGGER.debug('sending fields %s' % fields)
         query = urllib.urlencode(fields)
-        return reference, URL, '%s?%s&hmac=%s' % (SERVICE_URL, query,
-                sign_ntkey_query(self.cle, query))
+        url = '%s?%s&hmac=%s' % (SERVICE_URL, query, sign_ntkey_query(self.cle,
+            query))
+        LOGGER.debug('full url %s' % url)
+        return reference, URL, url
 
     def response(self, query_string):
         form = urlparse.parse_qs(query_string)

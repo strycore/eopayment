@@ -5,6 +5,7 @@ from decimal import Decimal
 import logging
 import os
 import os.path
+import uuid
 
 from common import PaymentCommon, HTML
 
@@ -35,10 +36,21 @@ REQUEST_VALID_PARAMS = ['merchant_id', 'merchant_country', 'amount',
     'capture_day', 'capture_mode', 'bgcolor', 'block_align', 'block_order',
     'textcolor', 'receipt_complement', 'caddie', 'customer_id', 'customer_email',
     'customer_ip_address', 'data', 'return_context', 'target', 'order_id']
+
+RESPONSE_PARAMS = [ 'code', 'error', 'merchant_id', 'merchant_country',
+    'amount', 'transaction_id', 'payment_means', 'transmission_date',
+    'payment_time', 'payment_date', 'response_code', 'payment_certificate',
+    'authorisation_id', 'currency_code', 'card_number', 'cvv_flag',
+    'cvv_response_code', 'bank_response_code', 'complementary_code',
+    'complementary_info', 'return_context', 'caddie', 'receipt_complement',
+    'merchant_language', 'language', 'customer_id', 'order_id', 'customer_email',
+    'customer_ip_address', 'capture_day', 'capture_mode', 'data', ]
+
 DATA = 'DATA'
 PARAMS = 'params'
 
 TRANSACTION_ID = 'transaction_id'
+ORDER_ID = 'order_id'
 MERCHANT_ID = 'merchant_id'
 RESPONSE_CODE = 'response_code'
 
@@ -75,6 +87,7 @@ class Payment(PaymentCommon):
         transaction_id = self.transaction_id(6, string.digits, 'sips',
                 params[MERCHANT_ID])
         params[TRANSACTION_ID] = transaction_id
+        params[ORDER_ID] = str(uuid.uuid4()).replace('-','')
         params['amount'] = str(Decimal(amount)*100)
         if email:
             params['customer_email'] = email
@@ -82,7 +95,7 @@ class Payment(PaymentCommon):
             params['normal_return_url'] = next_url
         code, error, form = self.execute('request', params)
         if int(code) == 0:
-            return transaction_id, HTML, form
+            return params[ORDER_ID], HTML, form
         else:
             raise RuntimeError('sips/request returned -1: %s' % error)
 
@@ -90,6 +103,6 @@ class Payment(PaymentCommon):
         form = urlparse.parse_qs(query_string)
         params = {'message': form[DATA]}
         result = self.execute('response', params)
-        d = dict([p.split('=',1) for p in result])
+        d = dict(zip(RESPONSE_PARAMS, result))
         LOGGER.debug('response contains fields %s' % d)
-        return result.get(RESPONSE_CODE) == '00', form.get(TRANSACTION_ID), d
+        return result.get(RESPONSE_CODE) == '00', form.get(ORDER_ID), d, None

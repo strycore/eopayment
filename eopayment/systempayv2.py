@@ -15,6 +15,7 @@ __all__ = ['Payment']
 PAYMENT_URL = "https://systempay.cyberpluspaiement.com/vads-payment/"
 LOGGER = logging.getLogger(__name__)
 SERVICE_URL = '???'
+VADS_TRANS_DATE = 'vads_trans_date'
 
 def isonow():
     return dt.datetime.now()  \
@@ -97,7 +98,7 @@ PARAMETERS = [
         Parameter('signature', 'an', None, length=40),
         Parameter('vads_site_id', 'n', 02, length=8, needed=True),
         Parameter('vads_theme_config', 'ans', 32, max_length=255),
-        Parameter('vads_trans_date', 'n', 04, length=14, needed=True,
+        Parameter(VADS_TRANS_DATE, 'n', 04, length=14, needed=True,
             default=isonow),
         Parameter('vads_trans_id', 'n', 03, length=6, needed=True),
         Parameter('vads_validation_mode', 'n', 5, max_length=1, choices=('', 0, 1),
@@ -205,8 +206,8 @@ class Payment(PaymentCommon):
         if next_url:
             kwargs['vads_url_return'] = next_url
 
-        transaction_id = self.transaction_id(6, string.digits,
-                'systempay', self.options['vads_site_id'])
+        transaction_id = self.transaction_id(6,
+                string.digits, 'systempay', self.options['vads_site_id'])
         kwargs['vads_trans_id'] = transaction_id
         fields = kwargs
         for parameter in PARAMETERS:
@@ -232,6 +233,7 @@ parameters received: %s' % (name, kwargs))
                             parameter.ptype))
         fields['signature'] = self.signature(fields)
         url = '%s?%s' % (SERVICE_URL, urllib.urlencode(fields))
+        transaction_id = '%s_%s' % (fields[VADS_TRANS_DATE], transaction_id)
         return transaction_id, URL, fields
 
     def response(self, query_string):
@@ -239,27 +241,32 @@ parameters received: %s' % (name, kwargs))
         copy = fields.copy()
         if 'vads_auth_result' in fields:
             v = copy['vads_auth_result']
-            copy['vads_auth_result'] = '%s: %s' % (v, AUTH_RESULT_MAP.get(v, 'Code inconnu'))
+            ctx = (v, AUTH_RESULT_MAP.get(v, 'Code inconnu'))
+            copy['vads_auth_result'] = '%s: %s' % ctx
         if 'vads_result' in copy:
             v = copy['vads_result']
-            copy['vads_result'] = '%s: %s' % (v, RESULT_MAP.get(v, 'Code inconnu'))
+            ctx = (v, RESULT_MAP.get(v, 'Code inconnu'))
+            copy['vads_result'] = '%s: %s' % ctx
             if v == '30':
                 if 'vads_extra_result' in fields:
                     v = fields['vads_extra_result']
                     if v.isdigit():
                         for parameter in PARAMETERS:
                             if int(v) == parameter.code:
-                                fields['vads_extra_result'] = 'erreur dans le champ %s' % parameter.name
+                                s ='erreur dans le champ %s' % parameter.name
+                                fields['vads_extra_result'] = s
             elif v in ('05', '00'):
                 v = fields['vads_extra_result']
-                fields['vads_extra_result'] = '%s: %s' % (v, EXTRA_RESULT_MAP.get(v, 'Code inconnu'))
+                fields['vads_extra_result'] = '%s: %s' % (v,
+                        EXTRA_RESULT_MAP.get(v, 'Code inconnu'))
         LOGGER.debug('checking systempay response on:')
         for key in sorted(fields.keys):
             LOGGER.debug('  %s: %s' % (key, copy[key]))
         signature = self.signature(fields)
         result = signature == fields['signature']
         LOGGER.debug('signature check result: %s' % result)
-        return result
+        transaction_id = '%s_%s' % (copy[VADS_TRANS_DATE], copy[VADS_TRANS_ID])
+        return result, transaction_id, copy, None
 
     def signature(self, fields):
         LOGGER.debug('got fields %s to sign' % fields )
