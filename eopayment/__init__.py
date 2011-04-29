@@ -4,7 +4,9 @@ import logging
 
 from common import URL, HTML
 
-__all__ = [ 'Payment', 'URL', 'HTML' ]
+__all__ = [ 'Payment', 'URL', 'HTML', '__version__' ]
+
+__version__ = "0.0.1"
 
 SIPS = 'sips'
 SYSTEMPAY = 'systempayv2'
