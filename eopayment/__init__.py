@@ -11,13 +11,14 @@ __version__ = "0.0.1"
 SIPS = 'sips'
 SYSTEMPAY = 'systempayv2'
 SPPLUS = 'spplus'
+DUMMY = 'dummy'
 
 class Payment(object):
     '''
        Interface to credit card online payment servers of French banks. The
        only use case supported for now is a unique automatic payment.
 
-           >>> import eopayment
+           >>> from eopayment import Payment, SPPLUS
            >>> spplus_options = {
                    'cle': '58 6d fc 9c 34 91 9b 86 3f fd 64 ' +
                           '63 c9 13 4a 26 ba 29 74 1e c7 e9 80 79',
@@ -29,7 +30,7 @@ class Payment(object):
            ('ZYX0NIFcbZIDuiZfazQp', 1, 'https://www.spplus.net/paiement/init.do?devise=978&validite=23%2F04%2F2011&version=1&reference=ZYX0NIFcbZIDuiZfazQp&montant=10.00&siret=00000000000001-01&langue=FR&taxe=0.00&email=bob%40example.com&hmac=b43dce98f97e5d249ef96f7f31d962f8fa5636ff')
 
        Supported backend of French banks are:
-       
+
         - sips, for BNP, Banque Populaire (before 2010), CCF, HSBC, Crédit
           Agricole, La Banque Postale, LCL, Société Générale and Crédit du
           Nord.
@@ -40,12 +41,23 @@ class Payment(object):
        executables, request and response, as the protocol from ATOS/SIPS is not
        documented. For the other backends the modules are autonomous.
 
+       Each backend need some configuration parameters to be used, the
+       description of the backend list those parameters. The description
+       dictionary can be used to generate configuration forms.
+
+           >>> d = eopayment.Payment.get_backend(SPPLUS).description
+           >>> print d['caption']
+           SSPPlus payment service of French bank Caisse d'epargne
+           >>> print d['parameters'].keys()
+           ('cle','siret')
+           >>> print d['parameters']['cle']['caption']
+           Secret Key
+
     '''
 
     def __init__(self, kind, options):
         self.kind = kind
-        module = __import__(kind)
-        self.backend = module.Payment(options)
+        self.backend = Payment.get_backend(kind)(options)
 
     def request(self, amount, email=None, next_url=None):
         '''Request a payment to the payment backend.
@@ -114,6 +126,11 @@ class Payment(object):
 
         '''
         return self.backend.response(query_string)
+
+    @classmethod
+    def get_backend(cls, kind):
+        module = __import__(kind)
+        return module.Payment
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

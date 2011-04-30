@@ -7,6 +7,7 @@ import urllib
 import string
 import datetime as dt
 import logging
+import re
 
 import Crypto.Cipher.DES
 from common import PaymentCommon, URL
@@ -51,6 +52,21 @@ SERVICE_URL = "https://www.spplus.net/paiement/init.do"
 LOGGER = logging.getLogger(__name__)
 
 class Payment(PaymentCommon):
+    description = {
+            'caption': "SPPlus payment service of French bank Caisse d'epargne",
+            'parameters': {
+                'cle': {
+                    'caption': 'Secret key, a 40 digits hexadecimal number',
+                    'regexp': re.compile('^ *((?:[a-fA-F0-9] *){40}) *$')
+                },
+                'siret': {
+                    'caption': 'Siret of the entreprise augmented with the '
+                        'site number, example: 00000000000001-01',
+                    'regexp': re.compile('^ *(\d{14}-\d{2}) *$')
+                }
+            }
+    }
+
     def __init__(self, options):
         LOGGER.debug('initializing spplus payment with %s' % options)
         self.cle = options['cle']
@@ -100,7 +116,7 @@ next_url=%s' % (montant, email, next_url))
                 signed_data, signature = query_string.rsplit('&', 1)
                 _, hmac = signature.split('=', 1)
                 LOGGER.debug('got signature %s' % hmac)
-                computed_hmac = sign_ntkey_query(self.clem, signed_data)
+                computed_hmac = sign_ntkey_query(self.cle, signed_data)
                 LOGGER.debug('computed signature %s' % hmac)
                 result = hmac==computed_hmac \
                         and reference.get(ETAT) == ETAT_PAIEMENT_ACCEPTE
