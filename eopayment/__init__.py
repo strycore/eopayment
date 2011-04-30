@@ -16,7 +16,7 @@ DUMMY = 'dummy'
 
 def get_backend(kind):
     '''Resolve a backend name into a module object'''
-    module = __import__(kind)
+    module = __import__(kind, globals(), locals(), [], -1)
     return module.Payment
 
 class Payment(object):
