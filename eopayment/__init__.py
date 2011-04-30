@@ -96,7 +96,7 @@ class Payment(object):
                    # present the form in HTML to the user
 
         '''
-        return self.backend.request(amount, email=email)
+        return self.backend.request(amount, email=email, next_url=next_url)
 
     def response(self, query_string):
         '''
