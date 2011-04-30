@@ -4,7 +4,8 @@ import logging
 
 from common import URL, HTML
 
-__all__ = [ 'Payment', 'URL', 'HTML', '__version__' ]
+__all__ = [ 'Payment', 'URL', 'HTML', '__version__', 'SIPS', 'SYSTEMPAY',
+    'SPPLUS', 'DUMMY', 'get_backend' ]
 
 __version__ = "0.0.1"
 
@@ -12,6 +13,11 @@ SIPS = 'sips'
 SYSTEMPAY = 'systempayv2'
 SPPLUS = 'spplus'
 DUMMY = 'dummy'
+
+def get_backend(kind):
+    '''Resolve a backend name into a module object'''
+    module = __import__(kind)
+    return module.Payment
 
 class Payment(object):
     '''
@@ -45,7 +51,7 @@ class Payment(object):
        description of the backend list those parameters. The description
        dictionary can be used to generate configuration forms.
 
-           >>> d = eopayment.Payment.get_backend(SPPLUS).description
+           >>> d = eopayment.get_backend(SPPLUS).description
            >>> print d['caption']
            SSPPlus payment service of French bank Caisse d'epargne
            >>> print d['parameters'].keys()
@@ -57,7 +63,7 @@ class Payment(object):
 
     def __init__(self, kind, options):
         self.kind = kind
-        self.backend = Payment.get_backend(kind)(options)
+        self.backend = get_backend(kind)(options)
 
     def request(self, amount, email=None, next_url=None):
         '''Request a payment to the payment backend.
@@ -126,11 +132,6 @@ class Payment(object):
 
         '''
         return self.backend.response(query_string)
-
-    @classmethod
-    def get_backend(cls, kind):
-        module = __import__(kind)
-        return module.Payment
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
