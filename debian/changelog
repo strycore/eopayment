@@ -1,3 +1,9 @@
+eopayment (0.0.1-2) lenny; urgency=low
+
+  * New package, with fix for Python 2.5.
+
+ -- Frederic Peters <fpeters@debian.org>  Mon, 02 May 2011 11:14:33 +0200
+
 eopayment (0.0.1-1) lenny; urgency=low
 
   * Initial package, targetting lenny.
