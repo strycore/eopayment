@@ -1,0 +1,5 @@
+eopayment (0.0.1-1) lenny; urgency=low
+
+  * Initial package, targetting lenny.
+
+ -- Frederic Peters <fpeters@debian.org>  Mon, 02 May 2011 09:51:28 +0200

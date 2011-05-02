@@ -5,6 +5,7 @@ Setup script for eopayment
 '''
 
 import distutils
+import distutils.core
 import eopayment
 
 distutils.core.setup(name='eopayment',
