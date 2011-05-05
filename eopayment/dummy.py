@@ -13,11 +13,23 @@ SERVICE_URL = 'http://dummy-payment.demo.entrouvert.com/'
 ALPHANUM = string.letters + string.digits
 
 class Payment(PaymentCommon):
+    '''
+       Dummy implementation of the payment interface.
+
+       It is used with a dummy implementation of a bank payment service that
+       you can find on:
+
+           http://dummy-payment.demo.entrouvert.com/
+    '''
     description = {
             'caption': 'Dummy payment backend',
             'parameters': {
                 'direct_notification_url': {
                     'caption': 'direct notification url',
+                },
+                'origin': {
+                    'caption': 'name of the requesting service, '
+                               'to present in the user interface'
                 },
                 'siret': {
                     'caption': 'dummy siret parameter',
@@ -26,17 +38,28 @@ class Payment(PaymentCommon):
     }
 
     def __init__(self, options):
+        '''
+           You must pass the following keys inside the options dictionnary:
+            - direct_notification_url: where to POST to notify the service of a
+              payment
+            - siret: an identifier for the eCommerce site
+            - origin: a human string to display to the user about the origin of
+              the request.
+        '''
         self.direct_notification_url = options['direct_notification_url']
         self.siret = options['siret']
+        self.origin = options['origin']
 
     def request(self, montant, email=None, next_url=None):
         transaction_id = self.transaction_id(30, ALPHANUM, 'dummy', self.siret)
         query = {
                 'transaction_id': transaction_id,
+                'siret': self.siret,
                 'amount': montant,
                 'email': email,
                 'return_url': next_url or '',
-                'direct_notification_url': self.direct_notification_url
+                'direct_notification_url': self.direct_notification_url,
+                'origin': self.origin
         }
         url = '%s?%s' % (SERVICE_URL, urllib.urlencode(query))
         return transaction_id, URL, url
@@ -54,7 +77,8 @@ class Payment(PaymentCommon):
 if __name__ == '__main__':
     options = {
             'direct_notification_url': 'http://example.com/direct_notification_url',
-            'siret': '1234'
+            'siret': '1234',
+            'origin': 'Mairie de Perpette-les-oies'
     }
     p = Payment(options)
     print p.request(10.00, email='toto@example.com', next_url='http://example.com/retour')
