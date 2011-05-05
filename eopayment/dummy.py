@@ -34,6 +34,9 @@ class Payment(PaymentCommon):
                 'siret': {
                     'caption': 'dummy siret parameter',
                 },
+                'next_url': {
+                    'caption': 'Return URL for the user',
+                }
             }
     }
 
@@ -52,6 +55,8 @@ class Payment(PaymentCommon):
 
     def request(self, montant, email=None, next_url=None):
         transaction_id = self.transaction_id(30, ALPHANUM, 'dummy', self.siret)
+        if self.next_url:
+            next_url = self.next_url
         query = {
                 'transaction_id': transaction_id,
                 'siret': self.siret,
