@@ -52,6 +52,7 @@ class Payment(PaymentCommon):
         self.direct_notification_url = options['direct_notification_url']
         self.siret = options['siret']
         self.origin = options['origin']
+        self.next_url = options.get('next_url','')
 
     def request(self, montant, email=None, next_url=None):
         transaction_id = self.transaction_id(30, ALPHANUM, 'dummy', self.siret)
