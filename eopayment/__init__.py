@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os.path
 
 from common import URL, HTML
 
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     print p.request('10.00', email='bob@example.com',
             next_url='https://my-site.com')
 
-    sips_options = { 'filepath': '/', 'binpath': './' }
+    sips_options = { 'filepath': '/', 'binpath': os.path.dirname(__file__) }
     p = Payment(kind=SIPS, options=sips_options)
     print p.request('10.00', email='bob@example.com',
             next_url='https://my-site.com')
