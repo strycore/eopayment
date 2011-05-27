@@ -63,17 +63,18 @@ class Payment(PaymentCommon):
                     'caption': 'Siret of the entreprise augmented with the '
                         'site number, example: 00000000000001-01',
                     'regexp': re.compile('^ *(\d{14}-\d{2}) *$')
-                }
+                },
+                'langue': {
+                    'caption': 'Language of the customers',
+                    'default': 'FR',
+                },
+                'taxe': {
+                    'caption': 'Taxes',
+                    'default': '0.00'
+                },
             }
     }
-
-    def __init__(self, options):
-        LOGGER.debug('initializing spplus payment with %s' % options)
-        self.cle = options['cle']
-        self.siret = options['siret']
-        self.devise = '978'
-        self.langue = options.get('langue', 'FR')
-        self.taxe = options.get('taxe', '0.00')
+    devise = '978'
 
     def request(self, montant, email=None, next_url=None):
         LOGGER.debug('requesting spplus payment with montant %s email=%s and \

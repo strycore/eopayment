@@ -25,8 +25,8 @@ def isonow():
             .replace(':','')[:14]
 
 class Parameter:
-    def __init__(self, name, ptype, code, max_length=None, length=None, needed=False,
-            default=None, choices=None):
+    def __init__(self, name, ptype, code, max_length=None, length=None,
+            needed=False, default=None, choices=None):
         self.name = name
         self.ptype = ptype
         self.code = code

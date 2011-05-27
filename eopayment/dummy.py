@@ -20,10 +20,25 @@ class Payment(PaymentCommon):
        you can find on:
 
            http://dummy-payment.demo.entrouvert.com/
+
+       You must pass the following keys inside the options dictionnary:
+        - dummy_service_url, the URL of the dummy payment service, it defaults
+          to the one operated by Entr'ouvert.
+        - direct_notification_url: where to POST to notify the service of a
+          payment
+        - origin: a human string to display to the user about the origin of
+          the request.
+        - siret: an identifier for the eCommerce site, fake.
+        - next_url: the return URL for the user (can be overriden on a per
+          request basis).
     '''
     description = {
             'caption': 'Dummy payment backend',
             'parameters': {
+                'dummy_service_url': {
+                    'caption': 'URL of the dummy payment service',
+                    'default': SERVICE_URL,
+                },
                 'direct_notification_url': {
                     'caption': 'direct notification url',
                 },
@@ -39,20 +54,6 @@ class Payment(PaymentCommon):
                 }
             }
     }
-
-    def __init__(self, options):
-        '''
-           You must pass the following keys inside the options dictionnary:
-            - direct_notification_url: where to POST to notify the service of a
-              payment
-            - siret: an identifier for the eCommerce site
-            - origin: a human string to display to the user about the origin of
-              the request.
-        '''
-        self.direct_notification_url = options['direct_notification_url']
-        self.siret = options['siret']
-        self.origin = options['origin']
-        self.next_url = options.get('next_url','')
 
     def request(self, montant, email=None, next_url=None):
         transaction_id = self.transaction_id(30, ALPHANUM, 'dummy', self.siret)
@@ -87,7 +88,6 @@ if __name__ == '__main__':
             'origin': 'Mairie de Perpette-les-oies'
     }
     p = Payment(options)
-    print p.request(10.00, email='toto@example.com', next_url='http://example.com/retour')
     retour = 'http://example.com/retour?amount=10.0&direct_notification_url=http%3A%2F%2Fexample.com%2Fdirect_notification_url&email=toto%40example.com&transaction_id=6Tfw2e1bPyYnz7CedZqvdHt7T9XX6T&return_url=http%3A%2F%2Fexample.com%2Fretour&nok=1'
     r = p.response(retour.split('?',1)[1])
     assert not r[0] 
