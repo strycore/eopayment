@@ -100,7 +100,7 @@ next_url=%s' % (montant, email, next_url))
             fields['urlretour'] = next_url
         LOGGER.debug('sending fields %s' % fields)
         query = urllib.urlencode(fields)
-        url = '%s?%s&hmac=%s' % (SERVICE_URL, query, sign_ntkey_query(self.cle,
+        url = '%s?%s&hmac=%s' % (SERVICE_URL, query, sign_url_paiement(self.cle,
             query))
         LOGGER.debug('full url %s' % url)
         return reference, URL, url
