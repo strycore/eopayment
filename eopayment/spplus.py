@@ -120,7 +120,7 @@ next_url=%s' % (montant, email, next_url))
                 computed_hmac = sign_ntkey_query(self.cle, signed_data)
                 LOGGER.debug('computed signature %s' % hmac)
                 result = hmac==computed_hmac \
-                        and reference.get(ETAT) == ETAT_PAIEMENT_ACCEPTE
+                        and form.get(ETAT) == ETAT_PAIEMENT_ACCEPTE
                 return result, reference, form, SPCHECKOK
             except ValueError:
                 return False, reference, form, SPCHECKOK
