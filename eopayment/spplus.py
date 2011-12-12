@@ -33,7 +33,7 @@ def decrypt_key(key):
 def sign_ntkey_query(ntkey, query):
     key = decrypt_ntkey(ntkey)
     data_to_sign = ''.join(y for x,y in urlparse.parse_qsl(query, True))
-    return hmac.new(key[:20], data_to_sign, hashlib.sha1).hexdigest()
+    return hmac.new(key[:20], data_to_sign, hashlib.sha1).hexdigest().upper()
 
 PAIEMENT_FIELDS = [ 'siret', REFERENCE, 'langue', 'devise', 'montant',
     'taxe', 'validite' ]
@@ -45,7 +45,7 @@ def sign_url_paiement(ntkey, query):
     data = urlparse.parse_qs(query, True)
     fields = [data.get(field,[''])[0] for field in PAIEMENT_FIELDS]
     data_to_sign = ''.join(fields)
-    return hmac.new(key[:20], data_to_sign, hashlib.sha1).hexdigest()
+    return hmac.new(key[:20], data_to_sign, hashlib.sha1).hexdigest().upper()
 
 ALPHANUM = string.letters + string.digits
 SERVICE_URL = "https://www.spplus.net/paiement/init.do"
