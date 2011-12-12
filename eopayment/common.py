@@ -20,7 +20,7 @@ class PaymentCommon(object):
         LOGGER.debug('initializing with options %s' % options)
         for key, value in self.description['parameters'].iteritems():
             if 'default' in value:
-                setattr(self, key, options.get(key, value['default']))
+                setattr(self, key, options.get(key, None) or value['default'])
             else:
                 setattr(self, key, options.get(key))
 
