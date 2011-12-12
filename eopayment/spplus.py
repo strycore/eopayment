@@ -72,6 +72,15 @@ class Payment(PaymentCommon):
                     'caption': 'Taxes',
                     'default': '0.00'
                 },
+                'modalite': {
+                    'caption': '1x, 2x, 3x, xx, nx (if multiple separated by "/")',
+                    'default': '1x',
+                },
+                'moyen': {
+                    'caption': 'AUR, AMX, CBS, CGA, '
+                        'CHK, DIN, PRE (if multiple separate by "/")',
+                    'default': 'CBS',
+                },
             }
     }
     devise = '978'
@@ -89,7 +98,9 @@ next_url=%s' % (montant, email, next_url))
                 'montant': str(Decimal(montant)),
                 REFERENCE: reference,
                 'validite': validite,
-                'version': '1'}
+                'version': '1',
+                'modalite': self.modalite,
+                'moyen': self.moyen }
         if email:
             fields['email'] = email
         if next_url:
