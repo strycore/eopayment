@@ -1,3 +1,9 @@
+eopayment (0.0.3-3) squeeze; urgency=low
+
+  * add missing dependency on python-crypto
+
+ -- Benjamin Dauvergne <bdauvergne@entrouvert.com>  Mon, 30 Jan 2012 19:30:45 +0100
+
 eopayment (0.0.3-2) squeeze; urgency=low
 
   * Improve debian/ using python-stdeb
