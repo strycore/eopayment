@@ -8,7 +8,7 @@ Homepage: http://dev.entrouvert.org/projects/eopayment/
 
 Package: python-eopayment
 Architecture: all
-Depends: ${python:Depends}
+Depends: ${python:Depends}, python-crypto (>= 2.1.0)
 XB-Python-Version: ${python:Versions}
 Description: common API to access online payment services
  eopayment is a Python module to interface with French's bank credit
