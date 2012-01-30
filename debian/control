@@ -7,7 +7,7 @@ Standards-Version: 3.9.1
 
 Package: python-eopayment
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, ${python:Depends}, python-crypto (>= 2.1.0)
 Breaks: ${python:Breaks}
 Description: Common API to use all French online payment credit card proc
  eopayment is a Python module to interface with French's bank credit card
