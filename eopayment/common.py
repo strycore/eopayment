@@ -15,6 +15,7 @@ HTML = 2
 
 class PaymentCommon(object):
     PATH = '/tmp'
+    BANK_ID = '__bank_id'
 
     def __init__(self, options):
         LOGGER.debug('initializing with options %s' % options)

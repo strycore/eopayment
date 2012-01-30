@@ -21,6 +21,7 @@ ETAT = 'etat'
 ETAT_PAIEMENT_ACCEPTE = '1'
 SPCHECKOK = 'spcheckok'
 LOGGER = logging.getLogger(__name__)
+REFSFP = 'refsfp'
 
 def decrypt_ntkey(ntkey):
     key = binascii.unhexlify(ntkey.replace(' ',''))
@@ -132,6 +133,7 @@ next_url=%s' % (montant, email, next_url))
                 LOGGER.debug('computed signature %s' % hmac)
                 result = hmac==computed_hmac \
                         and form.get(ETAT) == ETAT_PAIEMENT_ACCEPTE
+                form[self.BANK_ID] = form.get(REFSFP, '')
                 return result, reference, form, SPCHECKOK
             except ValueError:
                 return False, reference, form, SPCHECKOK

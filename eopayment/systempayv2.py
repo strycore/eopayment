@@ -16,6 +16,7 @@ PAYMENT_URL = "https://systempay.cyberpluspaiement.com/vads-payment/"
 LOGGER = logging.getLogger(__name__)
 SERVICE_URL = '???'
 VADS_TRANS_DATE = 'vads_trans_date'
+VADS_AUTH_NUMBER = 'vads_auth_number'
 
 def isonow():
     return dt.datetime.now()  \
@@ -266,6 +267,8 @@ parameters received: %s' % (name, kwargs))
         result = signature == fields['signature']
         LOGGER.debug('signature check result: %s' % result)
         transaction_id = '%s_%s' % (copy[VADS_TRANS_DATE], copy[VADS_TRANS_ID])
+        # the VADS_AUTH_NUMBER is the number to match payment in bank logs
+        copy[self.BANK_ID] = copy.get(copy[VADS_AUTH_NUMBER], '')
         return result, transaction_id, copy, None
 
     def signature(self, fields):

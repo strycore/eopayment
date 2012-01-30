@@ -30,6 +30,7 @@ __all__ = [ 'Payment' ]
 
 BINPATH  = 'binpath'
 PATHFILE = 'pathfile'
+AUTHORISATION_ID = 'authorisation_id'
 REQUEST_VALID_PARAMS = ['merchant_id', 'merchant_country', 'amount',
     'currency_code', 'pathfile', 'normal_return_url', 'cancel_return_url',
     'automatic_response_url', 'language', 'payment_means', 'header_flag',
@@ -40,7 +41,7 @@ REQUEST_VALID_PARAMS = ['merchant_id', 'merchant_country', 'amount',
 RESPONSE_PARAMS = [ 'code', 'error', 'merchant_id', 'merchant_country',
     'amount', 'transaction_id', 'payment_means', 'transmission_date',
     'payment_time', 'payment_date', 'response_code', 'payment_certificate',
-    'authorisation_id', 'currency_code', 'card_number', 'cvv_flag',
+    AUTHORISATION_ID, 'currency_code', 'card_number', 'cvv_flag',
     'cvv_response_code', 'bank_response_code', 'complementary_code',
     'complementary_info', 'return_context', 'caddie', 'receipt_complement',
     'merchant_language', 'language', 'customer_id', 'order_id', 'customer_email',
@@ -104,5 +105,7 @@ class Payment(PaymentCommon):
         params = {'message': form[DATA]}
         result = self.execute('response', params)
         d = dict(zip(RESPONSE_PARAMS, result))
+        # The reference identifier for the payment is the authorisation_id
+        d[self.BANK_ID] = result.get(AUTHORISATION_ID, '')
         LOGGER.debug('response contains fields %s' % d)
         return result.get(RESPONSE_CODE) == '00', form.get(ORDER_ID), d, None

@@ -74,6 +74,7 @@ class Payment(PaymentCommon):
     def response(self, query_string):
         form = parse_qs(query_string)
         transaction_id = form.get('transaction_id',[''])[0]
+        form[self.BANK_ID] = transaction_id
 
         if 'signed' in form:
             content = 'signature ok'
