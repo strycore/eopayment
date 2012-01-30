@@ -10,7 +10,7 @@ import eopayment
 
 distutils.core.setup(name='eopayment',
         version=eopayment.__version__,
-        licence='GPLv3 or later',
+        license='GPLv3 or later',
         description='Common API to use all French online payment credit card processing services',
         url='http://dev.entrouvert.org/projects/eopayment/',
         author="Entr'ouvert",
