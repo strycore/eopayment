@@ -6,10 +6,15 @@ Setup script for eopayment
 
 import distutils
 import distutils.core
-import eopayment
+import re
+
+def get_version():
+    text = file('eopayment/__init__.py').read()
+    m = re.search("__version__ = ['\"](.*)['\"]", text)
+    return m.group(1)
 
 distutils.core.setup(name='eopayment',
-        version=eopayment.__version__,
+        version=get_version(),
         license='GPLv3 or later',
         description='Common API to use all French online payment credit card processing services',
         long_description=
