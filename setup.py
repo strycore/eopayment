@@ -6,7 +6,35 @@ Setup script for eopayment
 
 import distutils
 import distutils.core
+from glob import glob
+from os.path import splitext, basename, join as pjoin
+import os
 import re
+from unittest import TextTestRunner, TestLoader
+
+class TestCommand(distutils.core.Command):
+    user_options = [ ]
+
+    def initialize_options(self):
+        self._dir = os.getcwd()
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        '''
+        Finds all the tests modules in tests/, and runs them.
+        '''
+        testfiles = [ ]
+        for t in glob(pjoin(self._dir, 'tests', '*.py')):
+            if not t.endswith('__init__.py'):
+                testfiles.append('.'.join(
+                    ['tests', splitext(basename(t))[0]])
+                )
+
+        tests = TestLoader().loadTestsFromNames(testfiles)
+        t = TextTestRunner(verbosity = 4)
+        t.run(tests)
 
 def get_version():
     text = file('eopayment/__init__.py').read()
@@ -29,4 +57,5 @@ distutils.core.setup(name='eopayment',
         packages=['eopayment'],
         requires=[
             'pycrypto (>= 2.5)'
-        ])
+        ],
+        cmdclass={'test': TestCommand})
