@@ -10,7 +10,7 @@ import logging
 import re
 
 import Crypto.Cipher.DES
-from common import PaymentCommon, URL
+from common import PaymentCommon, URL, PaymentResponse
 
 __all__ = ['Payment']
 
@@ -122,21 +122,35 @@ next_url=%s' % (montant, email, next_url))
         LOGGER.debug('received query_string %s' % query_string)
         LOGGER.debug('parsed as %s' % form)
         reference = form.get(REFERENCE)
-        if not 'hmac' in form:
-            return form.get('etat') == 1, reference, form, None
-        else:
+        bank_status = ''
+        signed_result = None
+        result = form.get('etat') == 1
+        form[self.BANK_ID] = form.get(REFSFP)
+        if 'hmac' in form:
             try:
                 signed_data, signature = query_string.rsplit('&', 1)
                 _, hmac = signature.split('=', 1)
                 LOGGER.debug('got signature %s' % hmac)
                 computed_hmac = sign_ntkey_query(self.cle, signed_data)
                 LOGGER.debug('computed signature %s' % hmac)
-                result = hmac==computed_hmac \
+                result = signed_result = hmac==computed_hmac \
                         and form.get(ETAT) == ETAT_PAIEMENT_ACCEPTE
-                form[self.BANK_ID] = form.get(REFSFP, '')
-                return result, reference, form, SPCHECKOK
+                if not signed_result:
+                    result = False
+                    bank_status = 'invalid signature'
             except ValueError:
-                return False, reference, form, SPCHECKOK
+                result = signed_result = False
+
+        response = PaymentResponse(
+                result=result,
+                signed_result=signed_result,
+                bank_data=form,
+                order_id=reference,
+                transaction_id=form[self.BANK_ID],
+                bank_status=bank_status,
+                return_content=SPCHECKOK if 'hmac' in form else None)
+        return response
+
 
 if __name__ == '__main__':
     import sys

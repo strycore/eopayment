@@ -8,7 +8,7 @@ import urlparse
 import urllib
 from decimal import Decimal
 
-from common import PaymentCommon, URL
+from common import PaymentCommon, URL, PaymentResponse
 
 __all__ = ['Payment']
 
@@ -17,6 +17,11 @@ LOGGER = logging.getLogger(__name__)
 SERVICE_URL = '???'
 VADS_TRANS_DATE = 'vads_trans_date'
 VADS_AUTH_NUMBER = 'vads_auth_number'
+VADS_AUTH_RESULT = 'vads_auth_result'
+VADS_RESULT = 'vads_result'
+VADS_EXTRA_RESULT = 'vads_extra_result'
+SIGNATURE = 'signature'
+VADS_TRANS_ID = 'vads_trans_id'
 
 def isonow():
     return dt.datetime.now()  \
@@ -232,7 +237,7 @@ parameters received: %s' % (name, kwargs))
                         raise TypeError('%s value %s is not of the type %s' % (
                             name, fields[name],
                             parameter.ptype))
-        fields['signature'] = self.signature(fields)
+        fields[SIGNATURE] = self.signature(fields)
         url = '%s?%s' % (SERVICE_URL, urllib.urlencode(fields))
         transaction_id = '%s_%s' % (fields[VADS_TRANS_DATE], transaction_id)
         return transaction_id, URL, fields
@@ -240,36 +245,52 @@ parameters received: %s' % (name, kwargs))
     def response(self, query_string):
         fields = urlparse.parse_qs(query_string)
         copy = fields.copy()
-        if 'vads_auth_result' in fields:
-            v = copy['vads_auth_result']
+        bank_status = []
+        if VADS_AUTH_RESULT in fields:
+            v = copy[VADS_AUTH_RESULT]
             ctx = (v, AUTH_RESULT_MAP.get(v, 'Code inconnu'))
-            copy['vads_auth_result'] = '%s: %s' % ctx
-        if 'vads_result' in copy:
-            v = copy['vads_result']
+            copy[VADS_AUTH_RESULT] = '%s: %s' % ctx
+            bank_status.append(copy[VADS_AUTH_RESULT])
+        if VADS_RESULT in copy:
+            v = copy[VADS_RESULT]
             ctx = (v, RESULT_MAP.get(v, 'Code inconnu'))
-            copy['vads_result'] = '%s: %s' % ctx
+            copy[VADS_RESULT] = '%s: %s' % ctx
+            bank_status.append(copy[VADS_RESULT])
             if v == '30':
-                if 'vads_extra_result' in fields:
-                    v = fields['vads_extra_result']
+                if VADS_EXTRA_RESULT in fields:
+                    v = fields[VADS_EXTRA_RESULT]
                     if v.isdigit():
                         for parameter in PARAMETERS:
                             if int(v) == parameter.code:
                                 s ='erreur dans le champ %s' % parameter.name
-                                fields['vads_extra_result'] = s
+                                copy[VADS_EXTRA_RESULT] = s
+                                bank_status.append(copy[VADS_EXTRA_RESULT])
             elif v in ('05', '00'):
-                v = fields['vads_extra_result']
-                fields['vads_extra_result'] = '%s: %s' % (v,
+                v = fields[VADS_EXTRA_RESULT]
+                copy[VADS_EXTRA_RESULT] = '%s: %s' % (v,
                         EXTRA_RESULT_MAP.get(v, 'Code inconnu'))
+                bank_status.append(copy[VADS_EXTRA_RESULT])
         LOGGER.debug('checking systempay response on:')
         for key in sorted(fields.keys):
             LOGGER.debug('  %s: %s' % (key, copy[key]))
         signature = self.signature(fields)
-        result = signature == fields['signature']
+        signature_result = signature == fields[SIGNATURE]
+        if not signature_result:
+            bank_status.append('invalid signature')
+        result = fields[VADS_AUTH_RESULT] == '00'
+        signed_result = signature_result and result
         LOGGER.debug('signature check result: %s' % result)
         transaction_id = '%s_%s' % (copy[VADS_TRANS_DATE], copy[VADS_TRANS_ID])
         # the VADS_AUTH_NUMBER is the number to match payment in bank logs
-        copy[self.BANK_ID] = copy.get(copy[VADS_AUTH_NUMBER], '')
-        return result, transaction_id, copy, None
+        copy[self.BANK_ID] = copy.get(VADS_AUTH_NUMBER, '')
+        response = PaymentResponse(
+                result=result,
+                signed_result=signed_result,
+                bankd_data=copy,
+                order_id=transaction_id,
+                transaction_id=copy.get(VADS_AUTH_NUMBER),
+                bank_status=' - '.join(bank_status))
+        return response
 
     def signature(self, fields):
         LOGGER.debug('got fields %s to sign' % fields )

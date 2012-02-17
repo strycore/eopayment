@@ -28,20 +28,23 @@ class PaymentResponse(object):
        a response transmitted directly from the bank to the merchant website,
        you usually have to confirm good reception of the message by returning a
        properly formatted response, this is it.
-       bank_error_status -- if result is False, it contains the reason
+       bank_status -- if result is False, it contains the reason
+       order_id -- the id given by the merchant in the payment request
        transaction_id -- the id assigned by the bank to this transaction, it
        could be the one sent by the merchant in the request, but it is usually
        an identifier internal to the bank.
     '''
 
     def __init__(self, result=None, signed_result=None, bank_data=dict(),
-            return_content=None, bank_error_status='', transaction_id=''):
+            return_content=None, bank_status='', transaction_id='',
+            order_id=''):
         self.result = result
         self.signed_result = signed_result
         self.bank_data = bank_data
         self.return_content = return_content
-        self.bank_error_status = bank_error_status
+        self.bank_status = bank_status
         self.transaction_id = transaction_id
+        self.order_id = order_id
 
 class PaymentCommon(object):
     PATH = '/tmp'

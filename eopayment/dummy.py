@@ -5,7 +5,7 @@ try:
 except:
     from urlparse import parse_qs
 
-from common import PaymentCommon, URL
+from common import PaymentCommon, URL, PaymentResponse
 
 __all__ = [ 'Payment' ]
 
@@ -38,20 +38,31 @@ class Payment(PaymentCommon):
                 'dummy_service_url': {
                     'caption': 'URL of the dummy payment service',
                     'default': SERVICE_URL,
+                    'type': string,
                 },
                 'direct_notification_url': {
                     'caption': 'direct notification url',
+                    'type': string,
                 },
                 'origin': {
                     'caption': 'name of the requesting service, '
-                               'to present in the user interface'
+                               'to present in the user interface',
+                    'type': string,
+
                 },
                 'siret': {
                     'caption': 'dummy siret parameter',
+                    'type': string,
                 },
                 'next_url': {
                     'caption': 'Return URL for the user',
-                }
+                    'type': string,
+                },
+                'consider_all_response_signed': {
+                    'caption': '',
+                    'type': bool,
+                    'default': False,
+                },
             }
     }
 
@@ -80,7 +91,15 @@ class Payment(PaymentCommon):
             content = 'signature ok'
         else:
             content = None
-        return 'ok' in form and transaction_id and True, transaction_id, form, content
+
+        response = PaymentResponse(result='ok' in form,
+                signed_result='ok' in form and 'signed' in form,
+                bank_data=form,
+                return_content=content,
+                order_id=transaction_id,
+                transaction_id=transaction_id,
+                bank_status=form.get('reason'))
+        return response
 
 if __name__ == '__main__':
     options = {
