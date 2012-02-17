@@ -9,6 +9,7 @@ import urllib
 from decimal import Decimal
 
 from common import PaymentCommon, URL, PaymentResponse
+from cb import CB_RESPONSE_CODES
 
 __all__ = ['Payment']
 
@@ -121,41 +122,7 @@ PARAMETERS = [
         Parameter('vads_contracts', 'ans', 62, max_length=255),
 ]
 
-AUTH_RESULT_MAP = {
-        '00': "transaction approuvée ou traitée avec succés",
-        '02': "contacter l'émetteur de la carte",
-        '03': "accepteur invalid",
-        '04': "conserver la carte",
-        '05': "ne pas honorer",
-        '07': "conserver la carte, conditions spéciales",
-        '08': "approuver aprés identification",
-        '12': "transaction invalide",
-        '13': "montant invalide",
-        '14': "numéro de porteur invalide",
-        '30': "erreur de format",
-        '31': "identifiant de l'organisme acquéreur inconnu",
-        '33': "date de validité de la carte dépassée",
-        '34': "suspicion de fraude",
-        '41': "carte perdue",
-        '43': "carte volée",
-        '51': "provision insuffisante",
-        '54': "date de validité de la carte dépassée",
-        '56': "carte absente du fichier",
-        '57': "transaction non permise à ce porteur",
-        '58': "transaction interdite au terminal",
-        '59': "suspicion de fraude",
-        '60': "l'accepteur de carte doit contacter l'acquéreur",
-        '61': "montant de retrait hors limite",
-        '63': "règles de sécurité non respectée",
-        '68': "réponse non parvenu ou réçu trop tard",
-        '90': "arrêt momentané du système",
-        '91': "émetteur de carte inacessible",
-        '96': "mauvais fonctionnement du système",
-        '94': "transaction dupliquée",
-        '97': "échéance de la temporisation de surveillance globale",
-        '98': "serveur indisponible routage réseau demandé à nouveau",
-        '99': "incident domain initiateur",
-}
+AUTH_RESULT_MAP = CB_RESPONSE_CODES
 
 RESULT_MAP = {
         '00': 'paiement réalisé avec succés',
