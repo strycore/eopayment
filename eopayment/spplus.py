@@ -142,10 +142,13 @@ next_url=%s' % (montant, email, next_url))
         LOGGER.debug('received query_string %s' % query_string)
         LOGGER.debug('parsed as %s' % form)
         reference = form.get(REFERENCE)
-        bank_status = ''
+        bank_status = []
         signed_result = None
         result = form.get('etat') == 1
         form[self.BANK_ID] = form.get(REFSFP)
+        etat = form.get('etat')
+        status = '%s: %s' % (etat, SPPLUS_RESPONSE_CODES.get(etat, 'Unknown code'))
+        bank_status.append(status)
         if 'hmac' in form:
             try:
                 signed_data, signature = query_string.rsplit('&', 1)
@@ -156,9 +159,9 @@ next_url=%s' % (montant, email, next_url))
                 if hmac == computed_hmac:
                     signed_result = result
                 else:
-                    bank_status += 'invalid signature'
+                    bank_status.append('invalid signature')
             except ValueError:
-                bank_status += 'invalid signature'
+                bank_status.append('invalid signature')
 
         response = PaymentResponse(
                 result=result,
@@ -166,7 +169,7 @@ next_url=%s' % (montant, email, next_url))
                 bank_data=form,
                 order_id=reference,
                 transaction_id=form[self.BANK_ID],
-                bank_status=bank_status,
+                bank_status=' - '.join(bank_status),
                 return_content=SPCHECKOK if 'hmac' in form else None)
         return response
 
