@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from decimal import Decimal
 import binascii
 import hmac
@@ -22,6 +23,25 @@ ETAT_PAIEMENT_ACCEPTE = '1'
 SPCHECKOK = 'spcheckok'
 LOGGER = logging.getLogger(__name__)
 REFSFP = 'refsfp'
+
+SPPLUS_RESPONSE_CODES = {
+    '1': 'Autorisation de paiement acceptée',
+    '2': 'Autorisation de paiement refusée',
+    '4': 'Echéance du paiement acceptée et en attente de remise',
+    '5': 'Echéance du paiement refusée',
+    '6': 'Paiement par chèque accepté',
+    '8': 'Chèque encaissé',
+    '10': 'Paiement terminé',
+    '11': 'Echéance du paiement annulée par le commerçant',
+    '12': 'Abandon de l\’internaute',
+    '15': 'Remboursement enregistré',
+    '16': 'Remboursement annulé',
+    '17': 'Remboursement accepté',
+    '20': 'Echéance du paiement avec un impayé',
+    '21': 'Echéance du paiement avec un impayé et en attente de validation des services SP PLUS',
+    '30': 'Echéance du paiement remisée',
+    '99': 'Paiement de test en production',
+}
 
 def decrypt_ntkey(ntkey):
     key = binascii.unhexlify(ntkey.replace(' ',''))
