@@ -133,13 +133,12 @@ next_url=%s' % (montant, email, next_url))
                 LOGGER.debug('got signature %s' % hmac)
                 computed_hmac = sign_ntkey_query(self.cle, signed_data)
                 LOGGER.debug('computed signature %s' % hmac)
-                result = signed_result = hmac==computed_hmac \
-                        and form.get(ETAT) == ETAT_PAIEMENT_ACCEPTE
-                if not signed_result:
-                    result = False
-                    bank_status = 'invalid signature'
+                if hmac == computed_hmac:
+                    signed_result = result
+                else:
+                    bank_status += 'invalid signature'
             except ValueError:
-                result = signed_result = False
+                bank_status += 'invalid signature'
 
         response = PaymentResponse(
                 result=result,

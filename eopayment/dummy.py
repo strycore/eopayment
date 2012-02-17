@@ -87,13 +87,17 @@ class Payment(PaymentCommon):
         transaction_id = form.get('transaction_id',[''])[0]
         form[self.BANK_ID] = transaction_id
 
-        if 'signed' in form:
+        signed = 'signed' in form
+        if signed:
             content = 'signature ok'
         else:
             content = None
+        signed = signed and self.consider_all_response_signed
+        result = 'ok' in form
+        signed_result = result if signed else None
 
-        response = PaymentResponse(result='ok' in form,
-                signed_result='ok' in form and 'signed' in form,
+        response = PaymentResponse(result=result,
+                signed_result=signed_result,
                 bank_data=form,
                 return_content=content,
                 order_id=transaction_id,
