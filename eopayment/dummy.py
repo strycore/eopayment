@@ -59,7 +59,9 @@ class Payment(PaymentCommon):
                     'type': string,
                 },
                 'consider_all_response_signed': {
-                    'caption': '',
+                    'caption': 'All response will be considered as signed '
+                         '(to test payment locally for example, as you '
+                         'cannot received the signed callback)',
                     'type': bool,
                     'default': False,
                 },
