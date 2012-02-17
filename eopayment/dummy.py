@@ -38,25 +38,25 @@ class Payment(PaymentCommon):
                 'dummy_service_url': {
                     'caption': 'URL of the dummy payment service',
                     'default': SERVICE_URL,
-                    'type': string,
+                    'type': str,
                 },
                 'direct_notification_url': {
                     'caption': 'direct notification url',
-                    'type': string,
+                    'type': str,
                 },
                 'origin': {
                     'caption': 'name of the requesting service, '
                                'to present in the user interface',
-                    'type': string,
+                    'type': str,
 
                 },
                 'siret': {
                     'caption': 'dummy siret parameter',
-                    'type': string,
+                    'type': str,
                 },
                 'next_url': {
                     'caption': 'Return URL for the user',
-                    'type': string,
+                    'type': str,
                 },
                 'consider_all_response_signed': {
                     'caption': 'All response will be considered as signed '
