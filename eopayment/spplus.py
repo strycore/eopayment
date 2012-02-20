@@ -58,9 +58,18 @@ def decrypt_key(key):
     CIPHER = Crypto.Cipher.DES.new(KEY_DES_KEY, Crypto.Cipher.DES.MODE_CBC, IV)
     return CIPHER.decrypt(key)
 
+def extract_values(query_string):
+    kvs = query_string.split('&')
+    result = []
+    for kv in kvs:
+        k, v = kv.split('=', 1)
+        if k != 'hmac':
+            result.append(v)
+    return ''.join(result)
+
 def sign_ntkey_query(ntkey, query):
     key = decrypt_ntkey(ntkey)
-    data_to_sign = ''.join(y for x,y in urlparse.parse_qsl(query, True))
+    data_to_sign = extract_values(query)
     return hmac.new(key[:20], data_to_sign, hashlib.sha1).hexdigest().upper()
 
 PAIEMENT_FIELDS = [ 'siret', REFERENCE, 'langue', 'devise', 'montant',
