@@ -7,6 +7,7 @@ import logging
 import os
 import os.path
 import uuid
+import logging
 
 from common import PaymentCommon, HTML, PaymentResponse
 from cb import CB_RESPONSE_CODES
@@ -87,20 +88,20 @@ FINAREF_BANK_RESPONSE_CODE = {
 }
 
 class Payment(PaymentCommon):
-    def __init__(self, options):
+    def __init__(self, options, logger=LOGGER):
         self.options = options
-        LOGGER.debug('initializing sips payment class with %s' % options)
+        logger.debug('initializing sips payment class with %s' % options)
 
     def execute(self, executable, params):
         if PATHFILE in self.options:
             params[PATHFILE] = self.options[PATHFILE]
         executable = os.path.join(self.options[BINPATH], executable)
         args = [executable] + [ "%s=%s" % p for p in params.iteritems() ]
-        LOGGER.debug('executing %s' % args)
+        logger.debug('executing %s' % args)
         result, _ = subprocess.Popen(args, executable=executable,
                 stdout=subprocess.PIPE, shell=True).communicate()
         result = result.split('!')
-        LOGGER.debug('got response %s' % result)
+        logger.debug('got response %s' % result)
         return result
 
     def get_request_params(self):
@@ -108,7 +109,7 @@ class Payment(PaymentCommon):
         params.update(self.options.get(PARAMS, {}))
         return params
 
-    def request(self, amount, email=None, next_url=None):
+    def request(self, amount, email=None, next_url=None, logger=LOGGER):
         params = self.get_request_params()
         transaction_id = self.transaction_id(6, string.digits, 'sips',
                 params[MERCHANT_ID])
@@ -125,14 +126,14 @@ class Payment(PaymentCommon):
         else:
             raise RuntimeError('sips/request returned -1: %s' % error)
 
-    def response(self, query_string):
+    def response(self, query_string, logger=LOGGER):
         form = urlparse.parse_qs(query_string)
         params = {'message': form[DATA]}
         result = self.execute('response', params)
         d = dict(zip(RESPONSE_PARAMS, result))
         # The reference identifier for the payment is the authorisation_id
         d[self.BANK_ID] = d.get(AUTHORISATION_ID)
-        LOGGER.debug('response contains fields %s' % d)
+        logger.debug('response contains fields %s' % d)
         response_result = d.get(RESPONSE_CODE) == '00'
         response_code_msg = CB_BANK_RESPONSE_CODES.get(d.get(RESPONSE_CODE))
         response = PaymentResponse(

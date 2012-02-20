@@ -70,7 +70,6 @@ def sign_url_paiement(ntkey, query):
 
 ALPHANUM = string.letters + string.digits
 SERVICE_URL = "https://www.spplus.net/paiement/init.do"
-LOGGER = logging.getLogger(__name__)
 
 class Payment(PaymentCommon):
     description = {
@@ -106,8 +105,8 @@ class Payment(PaymentCommon):
     }
     devise = '978'
 
-    def request(self, montant, email=None, next_url=None):
-        LOGGER.debug('requesting spplus payment with montant %s email=%s and \
+    def request(self, montant, email=None, next_url=None, logger=LOGGER):
+        logger.debug('requesting spplus payment with montant %s email=%s and \
 next_url=%s' % (montant, email, next_url))
         reference = self.transaction_id(20, ALPHANUM, 'spplus', self.siret)
         validite = dt.date.today()+dt.timedelta(days=1)
@@ -130,19 +129,19 @@ next_url=%s' % (montant, email, next_url))
                        or '?' in next_url:
                    raise ValueError('next_url must be an absolute URL without parameters')
             fields['urlretour'] = next_url
-        LOGGER.debug('sending fields %s' % fields)
+        logger.debug('sending fields %s' % fields)
         query = urllib.urlencode(fields)
         url = '%s?%s&hmac=%s' % (SERVICE_URL, query, sign_url_paiement(self.cle,
             query))
-        LOGGER.debug('full url %s' % url)
+        logger.debug('full url %s' % url)
         return reference, URL, url
 
-    def response(self, query_string):
+    def response(self, query_string, logger=LOGGER):
         form = urlparse.parse_qs(query_string)
         for key, value in form.iteritems():
             form[key] = value[0]
-        LOGGER.debug('received query_string %s' % query_string)
-        LOGGER.debug('parsed as %s' % form)
+        logger.debug('received query_string %s' % query_string)
+        logger.debug('parsed as %s' % form)
         reference = form.get(REFERENCE)
         bank_status = []
         signed_result = None
@@ -155,9 +154,9 @@ next_url=%s' % (montant, email, next_url))
             try:
                 signed_data, signature = query_string.rsplit('&', 1)
                 _, hmac = signature.split('=', 1)
-                LOGGER.debug('got signature %s' % hmac)
+                logger.debug('got signature %s' % hmac)
                 computed_hmac = sign_ntkey_query(self.cle, signed_data)
-                LOGGER.debug('computed signature %s' % hmac)
+                logger.debug('computed signature %s' % hmac)
                 if hmac == computed_hmac:
                     signed_result = result
                 else:

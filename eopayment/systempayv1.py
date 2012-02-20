@@ -170,6 +170,8 @@ RESPONSE_SIGNATURE_FIELDS = ['version', 'site_id', 'ctx_mode', 'trans_id',
 
 S2S_RESPONSE_SIGNATURE_FIELDS = RESPONSE_SIGNATURE_FIELDS + [ 'hash' ]
 
+LOGGER = logging.getLogger(__name__)
+
 class Payment:
     ''' 
         ex.: Payment(secrets={'TEST': 'xxx', 'PRODUCTION': 'yyyy'}, site_id=123,
@@ -179,7 +181,7 @@ class Payment:
     def __init__(self, **kwargs):
         self.options = kwargs
 
-    def request(self, amount, **kwargs):
+    def request(self, amount, **kwargs, logger=LOGGER):
         '''
            Create a dictionnary to send a payment request to systempay the
            Credit Card payment server of the NATIXIS group

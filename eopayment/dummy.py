@@ -1,5 +1,7 @@
 import urllib
 import string
+import logging
+
 try:
     from cgi import parse_qs
 except:
@@ -11,6 +13,7 @@ __all__ = [ 'Payment' ]
 
 SERVICE_URL = 'http://dummy-payment.demo.entrouvert.com/'
 ALPHANUM = string.letters + string.digits
+LOGGER = logging.getLogger(__name__)
 
 class Payment(PaymentCommon):
     '''
@@ -68,7 +71,7 @@ class Payment(PaymentCommon):
             }
     }
 
-    def request(self, montant, email=None, next_url=None):
+    def request(self, montant, email=None, next_url=None, logger=LOGGER):
         transaction_id = self.transaction_id(30, ALPHANUM, 'dummy', self.siret)
         if self.next_url:
             next_url = self.next_url
@@ -84,7 +87,7 @@ class Payment(PaymentCommon):
         url = '%s?%s' % (SERVICE_URL, urllib.urlencode(query))
         return transaction_id, URL, url
 
-    def response(self, query_string):
+    def response(self, query_string, logger=LOGGER):
         form = parse_qs(query_string)
         transaction_id = form.get('transaction_id',[''])[0]
         form[self.BANK_ID] = transaction_id

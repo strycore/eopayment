@@ -166,7 +166,7 @@ class Payment(PaymentCommon):
         options = add_vads(options)
         self.options = options
 
-    def request(self, amount, email=None, next_url=None):
+    def request(self, amount, email=None, next_url=None, logger=LOGGER):
         '''
            Create a dictionary to send a payment request to systempay the
            Credit Card payment server of the NATIXIS group
@@ -209,7 +209,7 @@ parameters received: %s' % (name, kwargs))
         transaction_id = '%s_%s' % (fields[VADS_TRANS_DATE], transaction_id)
         return transaction_id, URL, fields
 
-    def response(self, query_string):
+    def response(self, query_string, logger=LOGGER):
         fields = urlparse.parse_qs(query_string)
         copy = fields.copy()
         bank_status = []
@@ -237,16 +237,16 @@ parameters received: %s' % (name, kwargs))
                 copy[VADS_EXTRA_RESULT] = '%s: %s' % (v,
                         EXTRA_RESULT_MAP.get(v, 'Code inconnu'))
                 bank_status.append(copy[VADS_EXTRA_RESULT])
-        LOGGER.debug('checking systempay response on:')
+        logger.debug('checking systempay response on:')
         for key in sorted(fields.keys):
-            LOGGER.debug('  %s: %s' % (key, copy[key]))
-        signature = self.signature(fields)
+            logger.debug('  %s: %s' % (key, copy[key]))
+        signature = self.signature(fields, logger)
         signature_result = signature == fields[SIGNATURE]
         if not signature_result:
             bank_status.append('invalid signature')
         result = fields[VADS_AUTH_RESULT] == '00'
         signed_result = signature_result and result
-        LOGGER.debug('signature check result: %s' % result)
+        logger.debug('signature check result: %s' % result)
         transaction_id = '%s_%s' % (copy[VADS_TRANS_DATE], copy[VADS_TRANS_ID])
         # the VADS_AUTH_NUMBER is the number to match payment in bank logs
         copy[self.BANK_ID] = copy.get(VADS_AUTH_NUMBER, '')
@@ -259,16 +259,16 @@ parameters received: %s' % (name, kwargs))
                 bank_status=' - '.join(bank_status))
         return response
 
-    def signature(self, fields):
-        LOGGER.debug('got fields %s to sign' % fields )
+    def signature(self, fields, logger):
+        logger.debug('got fields %s to sign' % fields )
         ordered_keys = sorted([ key for key in fields.keys() if key.startswith('vads_') ])
-        LOGGER.debug('ordered keys %s' % ordered_keys)
+        logger.debug('ordered keys %s' % ordered_keys)
         ordered_fields = [ str(fields[key]) for key in ordered_keys ]
         secret = self.secrets[fields['vads_ctx_mode']]
         signed_data = '+'.join(ordered_fields)
-        LOGGER.debug('generating signature on «%s»' % signed_data)
+        logger.debug('generating signature on «%s»' % signed_data)
         sign = hashlib.sha1('%s+%s' % (signed_data, secret)).hexdigest()
-        LOGGER.debug('signature «%s»' % sign)
+        logger.debug('signature «%s»' % sign)
         return sign
 
 if __name__ == '__main__':

@@ -62,9 +62,10 @@ class Payment(object):
 
     '''
 
-    def __init__(self, kind, options):
+    def __init__(self, kind, options, log_domain='eopayment'):
+        self.logger = logging.getLogger(log_domain)
         self.kind = kind
-        self.backend = get_backend(kind)(options)
+        self.backend = get_backend(kind)(options, logger=self.logger)
 
     def request(self, amount, email=None, next_url=None):
         '''Request a payment to the payment backend.
@@ -97,7 +98,7 @@ class Payment(object):
                    # present the form in HTML to the user
 
         '''
-        return self.backend.request(amount, email=email, next_url=next_url)
+        return self.backend.request(amount, email=email, next_url=next_url, logger=self.logger)
 
     def response(self, query_string):
         '''
@@ -132,7 +133,7 @@ class Payment(object):
              your site as a web service.
 
         '''
-        return self.backend.response(query_string)
+        return self.backend.response(query_string, logger=self.logger)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
