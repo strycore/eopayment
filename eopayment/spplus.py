@@ -171,7 +171,7 @@ next_url=%s' % (montant, email, next_url))
                 bank_status.append('invalid signature')
         if etat in PAID_STATE:
             result = PAID
-        if etat in ACCEPTED_STATE:
+        elif etat in ACCEPTED_STATE:
             result = ACCEPTED
         elif etat in VALID_STATE:
             result = RECEIVED
