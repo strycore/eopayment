@@ -172,7 +172,7 @@ next_url=%s' % (montant, email, next_url))
                 _, hmac = signature.split('=', 1)
                 logger.debug('got signature %s' % hmac)
                 computed_hmac = sign_ntkey_query(self.cle, signed_data)
-                logger.debug('computed signature %s' % hmac)
+                logger.debug('computed signature %s' % computed_hmac)
                 signed = hmac == computed_hmac
                 if not signed:
                     bank_status.append('invalid signature')
