@@ -145,7 +145,7 @@ next_url=%s' % (montant, email, next_url))
         reference = form.get(REFERENCE)
         bank_status = []
         signed_result = None
-        result = form.get('etat') == 1
+        result = form.get('etat') == '1'
         form[self.BANK_ID] = form.get(REFSFP)
         etat = form.get('etat')
         status = '%s: %s' % (etat, SPPLUS_RESPONSE_CODES.get(etat, 'Unknown code'))
