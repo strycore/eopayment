@@ -50,8 +50,8 @@ class PaymentCommon(object):
     PATH = '/tmp'
     BANK_ID = '__bank_id'
 
-    def __init__(self, options):
-        LOGGER.debug('initializing with options %s' % options)
+    def __init__(self, options, logger=LOGGER):
+        logger.debug('initializing with options %s' % options)
         for key, value in self.description['parameters'].iteritems():
             if 'default' in value:
                 setattr(self, key, options.get(key, None) or value['default'])

@@ -161,7 +161,7 @@ class Payment(PaymentCommon):
                 ctx_mode='PRODUCTION')
 
     '''
-    def __init__(self, options):
+    def __init__(self, options, logger=LOGGER):
         self.secrets = options.pop('secrets')
         options = add_vads(options)
         self.options = options
