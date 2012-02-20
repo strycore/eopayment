@@ -94,7 +94,7 @@ class Payment(PaymentCommon):
             content = 'signature ok'
         else:
             content = None
-        signed = signed and self.consider_all_response_signed
+        signed = signed or self.consider_all_response_signed
         result = 'ok' in form
         signed_result = result if signed else None
 
