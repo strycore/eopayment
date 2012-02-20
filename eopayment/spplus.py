@@ -11,7 +11,8 @@ import logging
 import re
 
 import Crypto.Cipher.DES
-from common import PaymentCommon, URL, PaymentResponse
+from common import (PaymentCommon, URL, PaymentResponse, RECEIVED, ACCEPTED,
+        PAID, ERROR)
 
 __all__ = ['Payment']
 
@@ -19,11 +20,12 @@ KEY_DES_KEY = '\x45\x1f\xba\x4f\x4c\x3f\xd4\x97'
 IV = '\x30\x78\x30\x62\x2c\x30\x78\x30'
 REFERENCE = 'reference'
 ETAT = 'etat'
-ETAT_PAIEMENT_ACCEPTE = '1'
 SPCHECKOK = 'spcheckok'
 LOGGER = logging.getLogger(__name__)
 REFSFP = 'refsfp'
 
+# Pour un paiement comptant la chaine des états est: 1 -> 4 -> 10, seul l'état
+# 10 garanti le paiement
 SPPLUS_RESPONSE_CODES = {
     '1': 'Autorisation de paiement acceptée',
     '2': 'Autorisation de paiement refusée',
@@ -42,6 +44,11 @@ SPPLUS_RESPONSE_CODES = {
     '30': 'Echéance du paiement remisée',
     '99': 'Paiement de test en production',
 }
+
+VALID_STATE = ('1', '4', '10')
+ACCEPTED_STATE = ('1', '4')
+PAID_STATE = ('10',)
+
 
 def decrypt_ntkey(ntkey):
     key = binascii.unhexlify(ntkey.replace(' ',''))
@@ -144,11 +151,11 @@ next_url=%s' % (montant, email, next_url))
         logger.debug('parsed as %s' % form)
         reference = form.get(REFERENCE)
         bank_status = []
-        signed_result = None
-        result = form.get('etat') == '1'
+        signed = False
         form[self.BANK_ID] = form.get(REFSFP)
         etat = form.get('etat')
         status = '%s: %s' % (etat, SPPLUS_RESPONSE_CODES.get(etat, 'Unknown code'))
+        logger.debug('status is %s', status)
         bank_status.append(status)
         if 'hmac' in form:
             try:
@@ -157,21 +164,28 @@ next_url=%s' % (montant, email, next_url))
                 logger.debug('got signature %s' % hmac)
                 computed_hmac = sign_ntkey_query(self.cle, signed_data)
                 logger.debug('computed signature %s' % hmac)
-                if hmac == computed_hmac:
-                    signed_result = result
-                else:
+                signed = hmac == computed_hmac
+                if not signed:
                     bank_status.append('invalid signature')
             except ValueError:
                 bank_status.append('invalid signature')
+        if etat in PAID_STATE:
+            result = PAID
+        if etat in ACCEPTED_STATE:
+            result = ACCEPTED
+        elif etat in VALID_STATE:
+            result = RECEIVED
+        else:
+            result = ERROR
 
         response = PaymentResponse(
                 result=result,
-                signed_result=signed_result,
+                signed=signed,
                 bank_data=form,
                 order_id=reference,
                 transaction_id=form[self.BANK_ID],
                 bank_status=' - '.join(bank_status),
-                return_content=SPCHECKOK if 'hmac' in form else None)
+                return_content=SPCHECKOK)
         return response
 
 

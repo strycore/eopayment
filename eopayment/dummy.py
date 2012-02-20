@@ -7,7 +7,7 @@ try:
 except:
     from urlparse import parse_qs
 
-from common import PaymentCommon, URL, PaymentResponse
+from common import PaymentCommon, URL, PaymentResponse, PAID, ERROR
 
 __all__ = [ 'Payment' ]
 
@@ -98,11 +98,10 @@ class Payment(PaymentCommon):
         else:
             content = None
         signed = signed or self.consider_all_response_signed
-        result = 'ok' in form
-        signed_result = result if signed else None
+        result = PAID if 'ok' in form else ERROR
 
         response = PaymentResponse(result=result,
-                signed_result=signed_result,
+                signed=signed,
                 bank_data=form,
                 return_content=content,
                 order_id=transaction_id,

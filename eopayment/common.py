@@ -4,7 +4,8 @@ import random
 import logging
 from datetime import date
 
-__all__ = [ 'PaymentCommon', 'URL', 'HTML', 'RANDOM' ]
+__all__ = [ 'PaymentCommon', 'URL', 'HTML', 'RANDOM', 'RECEIVED', 'ACCEPTED',
+'PAID', 'ERROR' ]
 
 
 LOGGER = logging.getLogger(__name__)
@@ -12,6 +13,11 @@ RANDOM = random.SystemRandom()
 
 URL = 1
 HTML = 2
+
+RECEIVED = 1
+ACCEPTED = 2
+PAID = 3
+ERROR = 99
 
 class PaymentResponse(object):
     '''Holds a generic view on the result of payment transaction response.
@@ -35,11 +41,11 @@ class PaymentResponse(object):
        an identifier internal to the bank.
     '''
 
-    def __init__(self, result=None, signed_result=None, bank_data=dict(),
+    def __init__(self, result=None, signed=None, bank_data=dict(),
             return_content=None, bank_status='', transaction_id='',
             order_id=''):
         self.result = result
-        self.signed_result = signed_result
+        self.signed = signed
         self.bank_data = bank_data
         self.return_content = return_content
         self.bank_status = bank_status
@@ -48,6 +54,19 @@ class PaymentResponse(object):
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.__dict__)
+
+    def is_received(self):
+        return self.result == RECEIVED
+
+    def is_accepted(self):
+        return self.result == ACCEPTED
+
+    def is_paid(self):
+        return self.result == PAID
+
+    def is_error(self):
+        return self.result == ERROR
+
 
 class PaymentCommon(object):
     PATH = '/tmp'
