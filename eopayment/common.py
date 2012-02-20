@@ -46,6 +46,9 @@ class PaymentResponse(object):
         self.transaction_id = transaction_id
         self.order_id = order_id
 
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.__dict__)
+
 class PaymentCommon(object):
     PATH = '/tmp'
     BANK_ID = '__bank_id'
