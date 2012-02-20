@@ -139,6 +139,8 @@ next_url=%s' % (montant, email, next_url))
 
     def response(self, query_string):
         form = urlparse.parse_qs(query_string)
+        for key, value in form.iteritems():
+            form[key] = value[0]
         LOGGER.debug('received query_string %s' % query_string)
         LOGGER.debug('parsed as %s' % form)
         reference = form.get(REFERENCE)
