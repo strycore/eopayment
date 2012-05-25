@@ -7,20 +7,25 @@ import string
 import urlparse
 import urllib
 from decimal import Decimal
+from gettext import gettext as _
 
-from common import PaymentCommon, URL, PaymentResponse
+from common import PaymentCommon, PaymentResponse, URL
 from cb import CB_RESPONSE_CODES
 
 __all__ = ['Payment']
 
-PAYMENT_URL = "https://systempay.cyberpluspaiement.com/vads-payment/"
+SERVICE_URL = "https://paiement.systempay.fr/vads-payment/"
 LOGGER = logging.getLogger(__name__)
-SERVICE_URL = '???'
 VADS_TRANS_DATE = 'vads_trans_date'
 VADS_AUTH_NUMBER = 'vads_auth_number'
 VADS_AUTH_RESULT = 'vads_auth_result'
 VADS_RESULT = 'vads_result'
 VADS_EXTRA_RESULT = 'vads_extra_result'
+VADS_CUST_EMAIL = 'vads_cust_email'
+VADS_URL_RETURN = 'vads_url_return'
+VADS_AMOUNT = 'vads_amount'
+VADS_SITE_ID = 'vads_site_id'
+VADS_TRANS_ID = 'vads_trans_id'
 SIGNATURE = 'signature'
 VADS_TRANS_ID = 'vads_trans_id'
 
@@ -33,7 +38,8 @@ def isonow():
 
 class Parameter:
     def __init__(self, name, ptype, code, max_length=None, length=None,
-            needed=False, default=None, choices=None):
+            needed=False, default=None, choices=None, description=None,
+            help_text=None):
         self.name = name
         self.ptype = ptype
         self.code = code
@@ -42,6 +48,8 @@ class Parameter:
         self.needed = needed
         self.default = default
         self.choices = choices
+        self.description = description
+        self.help_text = help_text
 
     def check_value(self, value):
         if self.length and len(str(value)) != self.length:
@@ -86,24 +94,33 @@ PARAMETERS = [
         Parameter('vads_cust_title', 'an', 17, max_length=63),
         Parameter('vads_cust_city', 'an', 21, max_length=63),
         Parameter('vads_cust_zip', 'an', 20, max_length=63),
-        # must be TEST or PRODUCTION
-        Parameter('vads_ctx_mode', 'a', 11, needed=True),
+        Parameter('vads_ctx_mode', 'a', 11, needed=True, choices=('TEST',
+            'PRODUCTION'), default='TEST'),
         # ISO 639 code
         Parameter('vads_language', 'a', 12, length=2, default='fr'),
         Parameter('vads_order_id', 'an-', 13, max_length=32),
-        Parameter('vads_order_info', 'an', 14, max_length=255),
-        Parameter('vads_order_info2', 'an', 14, max_length=255),
-        Parameter('vads_order_info3', 'an', 14, max_length=255),
+        Parameter('vads_order_info', 'an', 14, max_length=255,
+            description=_(u"Complément d'information 1")),
+        Parameter('vads_order_info2', 'an', 14, max_length=255,
+            description=_(u"Complément d'information 2")),
+        Parameter('vads_order_info3', 'an', 14, max_length=255,
+            description=_(u"Complément d'information 3")),
         Parameter('vads_page_action', None, 46, needed=True, default='PAYMENT',
             choices=('PAYMENT',)),
-        Parameter('vads_payment_cards', 'an;', 8, max_length=127, default=''),
+        Parameter('vads_payment_cards', 'an;', 8, max_length=127, default='',
+            description=_(u'Liste des cartes de paiement acceptées'),
+            help_text=_(u'vide ou des valeurs sépareés par un point-virgule parmi '
+            'AMEX, AURORE-MULTI, BUYSTER, CB, COFINOGA, E-CARTEBLEUE, '
+            'MASTERCARD, JCB, MAESTRO, ONEY, ONEY_SANDBOX, PAYPAL, '
+            'PAYPAL_SB, PAYSAFECARD, VISA')),
         # must be SINGLE or MULTI with parameters
         Parameter('vads_payment_config', '', 07, default='SINGLE',
             choices=('SINGLE','MULTI'), needed=True),
-        Parameter('vads_return_mode', None, 48, default='NONE',
+        Parameter('vads_return_mode', None, 48, default='GET',
             choices=('','NONE','POST','GET')),
         Parameter('signature', 'an', None, length=40),
-        Parameter('vads_site_id', 'n', 02, length=8, needed=True),
+        Parameter('vads_site_id', 'n', 02, length=8, needed=True,
+            description=_(u'Identifiant de la boutique')),
         Parameter('vads_theme_config', 'ans', 32, max_length=255),
         Parameter(VADS_TRANS_DATE, 'n', 04, length=14, needed=True,
             default=isonow),
@@ -121,6 +138,7 @@ PARAMETERS = [
         Parameter('vads_user_info', 'ans', 61, max_length=255),
         Parameter('vads_contracts', 'ans', 62, max_length=255),
 ]
+PARAMETER_MAP = { parameter.name: parameter for parameter in PARAMETERS }
 
 AUTH_RESULT_MAP = CB_RESPONSE_CODES
 
@@ -155,33 +173,94 @@ def add_vads(kwargs):
             new_vargs['vads_'+k] = v
     return new_vargs
 
+def check_vads(kwargs, exclude=[]):
+    for parameter in PARAMETERS:
+        name = parameter.name
+        if name not in kwargs and name not in exclude and parameter.needed:
+            raise ValueError('parameter %s must be defined' % name)
+        if name in kwargs and not parameter.check_value(kwargs[name]):
+            raise ValueError('parameter %s value %s is not of the type %s' % (
+                name, kwargs[name],
+                parameter.ptype))
+
 class Payment(PaymentCommon):
     ''' 
-        ex.: Payment(secrets={'TEST': 'xxx', 'PRODUCTION': 'yyyy'}, site_id=123,
-                ctx_mode='PRODUCTION')
+        Produce request for and verify response from the SystemPay payment
+        gateway.
+
+            >>> gw =Payment(dict(secret_test='xxx', secret_production='yyyy' site_id=123,
+                    ctx_mode='PRODUCTION')
+            >>> print gw.request(100)
+            ('20120525093304_188620',
+            'https://paiement.systempay.fr/vads-payment/?vads_url_return=http%3A%2F%2Furl.de.retour%2Fretour.php&vads_cust_country=FR&vads_site_id=93413345&vads_payment_config=SINGLE&vads_trans_id=188620&vads_action_mode=INTERACTIVE&vads_contrib=eopayment&vads_page_action=PAYMENT&vads_trans_date=20120525093304&vads_ctx_mode=TEST&vads_validation_mode=&vads_version=V2&vads_payment_cards=&signature=5d412498ab523627ec5730a09118f75afa602af5&vads_language=fr&vads_capture_delay=&vads_currency=978&vads_amount=100&vads_return_mode=NONE',
+            {'vads_url_return': 'http://url.de.retour/retour.php',
+            'vads_cust_country': 'FR', 'vads_site_id': '93413345',
+            'vads_payment_config': 'SINGLE', 'vads_trans_id': '188620',
+            'vads_action_mode': 'INTERACTIVE', 'vads_contrib': 'eopayment',
+            'vads_page_action': 'PAYMENT', 'vads_trans_date': '20120525093304',
+            'vads_ctx_mode': 'TEST', 'vads_validation_mode': '',
+            'vads_version': 'V2', 'vads_payment_cards': '', 'signature':
+            '5d412498ab523627ec5730a09118f75afa602af5', 'vads_language': 'fr',
+            'vads_capture_delay': '', 'vads_currency': 978, 'vads_amount': 100,
+            'vads_return_mode': 'NONE'})
 
     '''
+    description = {
+            'caption': 'SystemPay, système de paiment du groupe BPCE',
+            'parameters': [
+                {   'name': 'service_url',
+                    'default': SERVICE_URL,
+                    'caption': _(u'URL du service de paiment'),
+                    'help_text': _(u'ne pas modifier si vous ne savez pas'),
+                    'validation': lambda x: x.startswith('http'),
+                },
+                {   'name': 'secret_test',
+                    'caption': _(u'Secret pour la configuration de TEST'),
+                    'validation': str.isdigit,
+                },
+                {   'name': 'secret_production',
+                    'caption': _(u'Secret pour la configuration de PRODUCTION'),
+                    'validation': str.isdigit,
+                },
+            ]
+    }
+
+    for name in (VADS_SITE_ID, 'vads_order_info', 'vads_order_info2',
+            'vads_order_info3', 'vads_payment_cards', 'vads_payment_config'):
+        parameter = PARAMETER_MAP[name]
+        x = { 'name': name,
+              'caption': parameter.description or name,
+              'validation': parameter.check_value,
+            }
+        description['parameters'].append(x)
+
+
     def __init__(self, options, logger=LOGGER):
-        self.secrets = options.pop('secrets')
+        self.service_url = options.pop('service_url', SERVICE_URL)
+        self.secret_test = options.pop('secret_test')
+        self.secret_production = options.pop('secret_production', None)
         options = add_vads(options)
         self.options = options
+        self.logger = logger
 
-    def request(self, amount, email=None, next_url=None, logger=LOGGER):
+    def request(self, amount, email=None, next_url=None, **kwargs):
         '''
            Create a dictionary to send a payment request to systempay the
            Credit Card payment server of the NATIXIS group
         '''
-        kwargs = add_vads({'amount': amount})
-        if Decimal(kwargs['vads_amount']) < 0:
-            raise TypeError('amount must be an integer >= 0')
+        self.logger.debug('%s amount %s email %s next_url %s, kwargs: %s',
+                __name__, amount, email, next_url, kwargs)
+        kwargs.update(add_vads({'amount': amount}))
+        if Decimal(kwargs[VADS_AMOUNT]) < 0:
+            raise ValueError('amount must be an integer >= 0')
         if email:
-            kwargs['vads_cust_email'] = email
+            kwargs[VADS_CUST_EMAIL] = email
         if next_url:
-            kwargs['vads_url_return'] = next_url
+            kwargs[VADS_URL_RETURN] = next_url
 
         transaction_id = self.transaction_id(6,
-                string.digits, 'systempay', self.options['vads_site_id'])
-        kwargs['vads_trans_id'] = transaction_id
+                string.digits, 'systempay', self.options[VADS_SITE_ID])
+        kwargs[VADS_TRANS_ID] = transaction_id
         fields = kwargs
         for parameter in PARAMETERS:
             name = parameter.name
@@ -195,21 +274,16 @@ class Payment(PaymentCommon):
                     fields[name] = parameter.default()
                 else:
                     fields[name] = parameter.default
-            # raise error if needed parameters are absent
-            if name not in fields and parameter.needed:
-                raise ValueError('payment request is missing the %s parameter,\
-parameters received: %s' % (name, kwargs))
-            if name in fields \
-                    and not parameter.check_value(fields[name]):
-                        raise TypeError('%s value %s is not of the type %s' % (
-                            name, fields[name],
-                            parameter.ptype))
+        check_vads(fields)
         fields[SIGNATURE] = self.signature(fields)
+        self.logger.debug('%s request contains fields: %s', __name__, fields)
         url = '%s?%s' % (SERVICE_URL, urllib.urlencode(fields))
+        self.logger.debug('%s return url %s', __name__, url)
         transaction_id = '%s_%s' % (fields[VADS_TRANS_DATE], transaction_id)
-        return transaction_id, URL, fields
+        self.logger.debug('%s transaction id: %s', __name__, transaction_id)
+        return transaction_id, URL, url
 
-    def response(self, query_string, logger=LOGGER):
+    def response(self, query_string):
         fields = urlparse.parse_qs(query_string)
         copy = fields.copy()
         bank_status = []
@@ -237,16 +311,16 @@ parameters received: %s' % (name, kwargs))
                 copy[VADS_EXTRA_RESULT] = '%s: %s' % (v,
                         EXTRA_RESULT_MAP.get(v, 'Code inconnu'))
                 bank_status.append(copy[VADS_EXTRA_RESULT])
-        logger.debug('checking systempay response on:')
+        self.logger.debug('checking systempay response on:')
         for key in sorted(fields.keys):
-            logger.debug('  %s: %s' % (key, copy[key]))
-        signature = self.signature(fields, logger)
+            self.logger.debug('  %s: %s' % (key, copy[key]))
+        signature = self.signature(fields)
         signature_result = signature == fields[SIGNATURE]
         if not signature_result:
             bank_status.append('invalid signature')
         result = fields[VADS_AUTH_RESULT] == '00'
         signed_result = signature_result and result
-        logger.debug('signature check result: %s' % result)
+        self.logger.debug('signature check result: %s' % result)
         transaction_id = '%s_%s' % (copy[VADS_TRANS_DATE], copy[VADS_TRANS_ID])
         # the VADS_AUTH_NUMBER is the number to match payment in bank logs
         copy[self.BANK_ID] = copy.get(VADS_AUTH_NUMBER, '')
@@ -259,22 +333,21 @@ parameters received: %s' % (name, kwargs))
                 bank_status=' - '.join(bank_status))
         return response
 
-    def signature(self, fields, logger):
-        logger.debug('got fields %s to sign' % fields )
+    def signature(self, fields):
+        self.logger.debug('got fields %s to sign' % fields )
         ordered_keys = sorted([ key for key in fields.keys() if key.startswith('vads_') ])
-        logger.debug('ordered keys %s' % ordered_keys)
+        self.logger.debug('ordered keys %s' % ordered_keys)
         ordered_fields = [ str(fields[key]) for key in ordered_keys ]
-        secret = self.secrets[fields['vads_ctx_mode']]
+        secret = getattr(self, 'secret_%s' % fields['vads_ctx_mode'].lower())
         signed_data = '+'.join(ordered_fields)
-        logger.debug('generating signature on «%s»' % signed_data)
+        self.logger.debug('generating signature on «%s»' % signed_data)
         sign = hashlib.sha1('%s+%s' % (signed_data, secret)).hexdigest()
-        logger.debug('signature «%s»' % sign)
+        self.logger.debug('signature «%s»' % sign)
         return sign
 
 if __name__ == '__main__':
-    p = Payment(secrets={'TEST': '1234567890123456', 'PRODUCTION': 'yyy'}, site_id='00001234', ctx_mode='PRODUCTION')
-    print p.request(amount=100, ctx_mode='TEST', site_id='12345678',
-            trans_date='20090324122302', trans_id='122302',
-            url_return='http://url.de.retour/retour.php')
-
-
+    p = Payment(dict(
+        secret_test='2662931409789978',
+        site_id='93413345', 
+        ctx_mode='TEST'))
+    print p.request(100, vads_url_return='http://url.de.retour/retour.php')
