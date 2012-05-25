@@ -90,6 +90,7 @@ FINAREF_BANK_RESPONSE_CODE = {
 class Payment(PaymentCommon):
     def __init__(self, options, logger=LOGGER):
         self.options = options
+        self.logger = logger
         logger.debug('initializing sips payment class with %s' % options)
 
     def execute(self, executable, params):
@@ -97,11 +98,11 @@ class Payment(PaymentCommon):
             params[PATHFILE] = self.options[PATHFILE]
         executable = os.path.join(self.options[BINPATH], executable)
         args = [executable] + [ "%s=%s" % p for p in params.iteritems() ]
-        logger.debug('executing %s' % args)
+        self.logger.debug('executing %s' % args)
         result, _ = subprocess.Popen(args, executable=executable,
                 stdout=subprocess.PIPE, shell=True).communicate()
         result = result.split('!')
-        logger.debug('got response %s' % result)
+        self.logger.debug('got response %s' % result)
         return result
 
     def get_request_params(self):
@@ -126,14 +127,14 @@ class Payment(PaymentCommon):
         else:
             raise RuntimeError('sips/request returned -1: %s' % error)
 
-    def response(self, query_string, logger=LOGGER):
+    def response(self, query_string):
         form = urlparse.parse_qs(query_string)
         params = {'message': form[DATA]}
         result = self.execute('response', params)
         d = dict(zip(RESPONSE_PARAMS, result))
         # The reference identifier for the payment is the authorisation_id
         d[self.BANK_ID] = d.get(AUTHORISATION_ID)
-        logger.debug('response contains fields %s' % d)
+        self.logger.debug('response contains fields %s' % d)
         response_result = d.get(RESPONSE_CODE) == '00'
         response_code_msg = CB_BANK_RESPONSE_CODES.get(d.get(RESPONSE_CODE))
         response = PaymentResponse(
@@ -143,5 +144,4 @@ class Payment(PaymentCommon):
                 order_id=d.get(ORDER_ID),
                 transaction_id=d.get(AUTHORISATION_ID),
                 bank_status=response_code_msg)
-
-        return None
+        return response
