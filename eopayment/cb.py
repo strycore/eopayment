@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 '''Responses codes emitted by EMV Card or 'Carte Bleu' in France'''
 
