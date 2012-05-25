@@ -90,34 +90,34 @@ SERVICE_URL = "https://www.spplus.net/paiement/init.do"
 class Payment(PaymentCommon):
     description = {
             'caption': "SPPlus payment service of French bank Caisse d'epargne",
-            'parameters': {
-                'cle': {
+            'parameters': [
+                {   'name': 'cle',
                     'caption': 'Secret key, a 40 digits hexadecimal number',
                     'regexp': re.compile('^ *((?:[a-fA-F0-9] *){40}) *$')
                 },
-                'siret': {
+                {   'name': 'siret',
                     'caption': 'Siret of the entreprise augmented with the '
                         'site number, example: 00000000000001-01',
                     'regexp': re.compile('^ *(\d{14}-\d{2}) *$')
                 },
-                'langue': {
+                {   'name': 'langue',
                     'caption': 'Language of the customers',
                     'default': 'FR',
                 },
-                'taxe': {
+                {   'name': 'taxe',
                     'caption': 'Taxes',
                     'default': '0.00'
                 },
-                'modalite': {
+                {   'name': 'modalite',
                     'caption': '1x, 2x, 3x, xx, nx (if multiple separated by "/")',
                     'default': '1x',
                 },
-                'moyen': {
+                {   'name': 'moyen',
                     'caption': 'AUR, AMX, CBS, CGA, '
                         'CHK, DIN, PRE (if multiple separate by "/")',
                     'default': 'CBS',
                 },
-            }
+            ]
     }
     devise = '978'
 

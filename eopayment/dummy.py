@@ -4,7 +4,7 @@ import logging
 
 try:
     from cgi import parse_qs
-except:
+except ImportError:
     from urlparse import parse_qs
 
 from common import PaymentCommon, URL, PaymentResponse, PAID, ERROR
@@ -37,38 +37,38 @@ class Payment(PaymentCommon):
     '''
     description = {
             'caption': 'Dummy payment backend',
-            'parameters': {
-                'dummy_service_url': {
+            'parameters': [
+                {   'name': 'dummy_service_url',
                     'caption': 'URL of the dummy payment service',
                     'default': SERVICE_URL,
                     'type': str,
                 },
-                'direct_notification_url': {
+                {   'name': 'direct_notification_url',
                     'caption': 'direct notification url',
                     'type': str,
                 },
-                'origin': {
+                {   'name': 'origin',
                     'caption': 'name of the requesting service, '
                                'to present in the user interface',
                     'type': str,
 
                 },
-                'siret': {
+                {   'name': 'siret',
                     'caption': 'dummy siret parameter',
                     'type': str,
                 },
-                'next_url': {
+                {   'name': 'next_url',
                     'caption': 'Return URL for the user',
                     'type': str,
                 },
-                'consider_all_response_signed': {
+                {   'name': 'consider_all_response_signed',
                     'caption': 'All response will be considered as signed '
                          '(to test payment locally for example, as you '
                          'cannot received the signed callback)',
                     'type': bool,
                     'default': False,
                 },
-            }
+            ],
     }
 
     def request(self, montant, email=None, next_url=None, logger=LOGGER):
