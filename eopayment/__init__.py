@@ -10,6 +10,8 @@ __all__ = [ 'Payment', 'URL', 'HTML', '__version__', 'SIPS', 'SYSTEMPAY',
 
 __version__ = "0.0.10"
 
+LOGGER = logging.getLogger(__name__)
+
 SIPS = 'sips'
 SYSTEMPAY = 'systempayv2'
 SPPLUS = 'spplus'
@@ -62,16 +64,10 @@ class Payment(object):
 
     '''
 
-    def __init__(self, kind, options, logger=None):
+    def __init__(self, kind, options, logger=LOGGER):
         self.logger = logger
         self.kind = kind
-        self.backend = get_backend(kind)(options, **self.__get_extra_args())
-
-    def __get_extra_args(self):
-        if self.logger:
-            return { 'logger': self.logger }
-        else:
-            return {}
+        self.backend = get_backend(kind)(options, logger=logger)
 
     def request(self, amount, email=None, next_url=None):
         '''Request a payment to the payment backend.
@@ -104,8 +100,7 @@ class Payment(object):
                    # present the form in HTML to the user
 
         '''
-        return self.backend.request(amount, email=email, next_url=next_url,
-                **self.__get_extra_args())
+        return self.backend.request(amount, email=email, next_url=next_url)
 
     def response(self, query_string):
         '''
@@ -140,7 +135,7 @@ class Payment(object):
              your site as a web service.
 
         '''
-        return self.backend.response(query_string, **self.__get_extra_args())
+        return self.backend.response(query_string)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
