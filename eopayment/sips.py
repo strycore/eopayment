@@ -110,7 +110,7 @@ class Payment(PaymentCommon):
         params.update(self.options.get(PARAMS, {}))
         return params
 
-    def request(self, amount, email=None, next_url=None, logger=LOGGER):
+    def request(self, amount, email=None, next_url=None):
         params = self.get_request_params()
         transaction_id = self.transaction_id(6, string.digits, 'sips',
                 params[MERCHANT_ID])
