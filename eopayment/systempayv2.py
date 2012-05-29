@@ -9,7 +9,7 @@ import urllib
 from decimal import Decimal
 from gettext import gettext as _
 
-from common import PaymentCommon, PaymentResponse, URL
+from common import PaymentCommon, PaymentResponse, URL, PAID, ERROR
 from cb import CB_RESPONSE_CODES
 
 __all__ = ['Payment']
@@ -329,7 +329,11 @@ class Payment(PaymentCommon):
                 fields[SIGNATURE])
         if not signature_result:
             bank_status.append('invalid signature')
-        result = fields[VADS_AUTH_RESULT] == '00'
+
+        if fields[VADS_AUTH_RESULT] == '00':
+            result = PAID
+        else:
+            result = ERROR
         transaction_id = '%s_%s' % (copy[VADS_TRANS_DATE], copy[VADS_TRANS_ID])
         # the VADS_AUTH_NUMBER is the number to match payment in bank logs
         copy[self.BANK_ID] = copy.get(VADS_AUTH_NUMBER, '')
