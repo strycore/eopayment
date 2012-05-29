@@ -315,27 +315,28 @@ class Payment(PaymentCommon):
                                 copy[VADS_EXTRA_RESULT] = s
                                 bank_status.append(copy[VADS_EXTRA_RESULT])
             elif v in ('05', '00'):
-                v = fields[VADS_EXTRA_RESULT]
-                copy[VADS_EXTRA_RESULT] = '%s: %s' % (v,
-                        EXTRA_RESULT_MAP.get(v, 'Code inconnu'))
-                bank_status.append(copy[VADS_EXTRA_RESULT])
+                if VADS_EXTRA_RESULT in fields:
+                    v = fields[VADS_EXTRA_RESULT]
+                    copy[VADS_EXTRA_RESULT] = '%s: %s' % (v,
+                            EXTRA_RESULT_MAP.get(v, 'Code inconnu'))
+                    bank_status.append(copy[VADS_EXTRA_RESULT])
         self.logger.debug('checking systempay response on:')
-        for key in sorted(fields.keys):
+        for key in sorted(fields.keys()):
             self.logger.debug('  %s: %s' % (key, copy[key]))
         signature = self.signature(fields)
         signature_result = signature == fields[SIGNATURE]
+        self.logger.debug('signature check: %s <!> %s', signature,
+                fields[SIGNATURE])
         if not signature_result:
             bank_status.append('invalid signature')
         result = fields[VADS_AUTH_RESULT] == '00'
-        signed_result = signature_result and result
-        self.logger.debug('signature check result: %s' % result)
         transaction_id = '%s_%s' % (copy[VADS_TRANS_DATE], copy[VADS_TRANS_ID])
         # the VADS_AUTH_NUMBER is the number to match payment in bank logs
         copy[self.BANK_ID] = copy.get(VADS_AUTH_NUMBER, '')
         response = PaymentResponse(
                 result=result,
-                signed_result=signed_result,
-                bankd_data=copy,
+                signed=signature_result,
+                bank_data=copy,
                 order_id=transaction_id,
                 transaction_id=copy.get(VADS_AUTH_NUMBER),
                 bank_status=' - '.join(bank_status))
@@ -345,11 +346,12 @@ class Payment(PaymentCommon):
         self.logger.debug('got fields %s to sign' % fields )
         ordered_keys = sorted([ key for key in fields.keys() if key.startswith('vads_') ])
         self.logger.debug('ordered keys %s' % ordered_keys)
-        ordered_fields = [ str(fields[key]) for key in ordered_keys ]
+        ordered_fields = [ str(fields[key]) for key in ordered_keys]
         secret = getattr(self, 'secret_%s' % fields['vads_ctx_mode'].lower())
         signed_data = '+'.join(ordered_fields)
+        signed_data = '%s+%s' % (signed_data, secret)
         self.logger.debug('generating signature on «%s»' % signed_data)
-        sign = hashlib.sha1('%s+%s' % (signed_data, secret)).hexdigest()
+        sign = hashlib.sha1(signed_data).hexdigest()
         self.logger.debug('signature «%s»' % sign)
         return sign
 
@@ -359,3 +361,6 @@ if __name__ == '__main__':
         site_id='93413345', 
         ctx_mode='TEST'))
     print p.request(100, vads_url_return='http://url.de.retour/retour.php')
+    qs = 'vads_amount=100&vads_auth_mode=FULL&vads_auth_number=767712&vads_auth_result=00&vads_capture_delay=0&vads_card_brand=CB&vads_card_number=497010XXXXXX0000&vads_payment_certificate=9da32cc109882089e1b3fb80888ebbef072f70b7&vads_ctx_mode=TEST&vads_currency=978&vads_effective_amount=100&vads_site_id=93413345&vads_trans_date=20120529132547&vads_trans_id=620594&vads_validation_mode=0&vads_version=V2&vads_warranty_result=NO&vads_payment_src=&vads_order_id=---&vads_cust_country=FR&vads_contrib=eopayment&vads_contract_used=2334233&vads_expiry_month=6&vads_expiry_year=2013&vads_pays_ip=FR&vads_identifier=&vads_subscription=&vads_threeds_enrolled=&vads_threeds_cavv=&vads_threeds_eci=&vads_threeds_xid=&vads_threeds_cavvAlgorithm=&vads_threeds_status=&vads_threeds_sign_valid=&vads_threeds_error_code=&vads_threeds_exit_status=&vads_result=00&vads_extra_result=&vads_card_country=FR&vads_language=fr&vads_action_mode=INTERACTIVE&vads_page_action=PAYMENT&vads_payment_config=SINGLE&signature=9c4f2bf905bb06b008b07090905adf36638d8ece&'
+    response = p.response(qs)
+    assert response.signed and response.result
