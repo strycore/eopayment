@@ -256,6 +256,8 @@ class Payment(PaymentCommon):
         '''
         self.logger.debug('%s amount %s email %s next_url %s, kwargs: %s',
                 __name__, amount, email, next_url, kwargs)
+        # amount unit is cents
+        amount = 100 * amount
         kwargs.update(add_vads({'amount': amount}))
         if Decimal(kwargs[VADS_AMOUNT]) < 0:
             raise ValueError('amount must be an integer >= 0')
