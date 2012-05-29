@@ -25,9 +25,7 @@ class PaymentResponse(object):
        result -- holds the declarative result of the transaction, does not use
        it to validate the payment in your backoffice, it's just for informing
        the user that all is well.
-       signed_result -- holds the signed result of the transaction, when it is
-       not None, it contains the result of the transaction as asserted by the
-       bank with an electronic signature.
+       signed -- holds whether the message was signed
        bank_data -- a dictionnary containing some data depending on the bank,
        you have to log it for audit purpose.
        return_content -- when handling a response in a callback endpoint, i.e.
