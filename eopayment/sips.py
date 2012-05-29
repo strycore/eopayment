@@ -88,6 +88,19 @@ FINAREF_BANK_RESPONSE_CODE = {
 }
 
 class Payment(PaymentCommon):
+    description = {
+            'caption': 'SIPS',
+            'parameters': [{
+                'name': 'merchand_id',
+                },
+                { 'name': 'merchant_country', },
+                { 'name': 'currency_code', }
+            ],
+    }
+
+
+
+
     def __init__(self, options, logger=LOGGER):
         self.options = options
         self.logger = logger
@@ -107,7 +120,7 @@ class Payment(PaymentCommon):
 
     def get_request_params(self):
         params = DEFAULT_PARAMS.copy()
-        params.update(self.options.get(PARAMS, {}))
+        params.update(self.options)
         return params
 
     def request(self, amount, email=None, next_url=None):
