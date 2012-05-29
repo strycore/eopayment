@@ -213,10 +213,12 @@ class Payment(PaymentCommon):
                     'caption': _(u'URL du service de paiment'),
                     'help_text': _(u'ne pas modifier si vous ne savez pas'),
                     'validation': lambda x: x.startswith('http'),
+                    'required': True,
                 },
                 {   'name': 'secret_test',
                     'caption': _(u'Secret pour la configuration de TEST'),
                     'validation': str.isdigit,
+                    'required': True,
                 },
                 {   'name': 'secret_production',
                     'caption': _(u'Secret pour la configuration de PRODUCTION'),
@@ -225,12 +227,16 @@ class Payment(PaymentCommon):
             ]
     }
 
-    for name in (VADS_SITE_ID, 'vads_order_info', 'vads_order_info2',
+    for name in ('vads_ctx_mode', VADS_SITE_ID, 'vads_order_info', 'vads_order_info2',
             'vads_order_info3', 'vads_payment_cards', 'vads_payment_config'):
         parameter = PARAMETER_MAP[name]
         x = { 'name': name,
               'caption': parameter.description or name,
               'validation': parameter.check_value,
+              'default': parameter.default,
+              'required': parameter.needed,
+              'help_text': parameter.help_text,
+              'max_length': parameter.max_length
             }
         description['parameters'].append(x)
 
@@ -284,7 +290,9 @@ class Payment(PaymentCommon):
         return transaction_id, URL, url
 
     def response(self, query_string):
-        fields = urlparse.parse_qs(query_string)
+        fields = urlparse.parse_qs(query_string, True)
+        for key, value in fields.iteritems():
+            fields[key] = value[0]
         copy = fields.copy()
         bank_status = []
         if VADS_AUTH_RESULT in fields:
