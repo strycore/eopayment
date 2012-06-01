@@ -138,7 +138,7 @@ PARAMETERS = [
         Parameter('vads_user_info', 'ans', 61, max_length=255),
         Parameter('vads_contracts', 'ans', 62, max_length=255),
 ]
-PARAMETER_MAP = { parameter.name: parameter for parameter in PARAMETERS }
+PARAMETER_MAP = dict(((parameter.name, parameter) for parameter in PARAMETERS ))
 
 AUTH_RESULT_MAP = CB_RESPONSE_CODES
 
