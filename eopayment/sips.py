@@ -7,7 +7,6 @@ import logging
 import os
 import os.path
 import uuid
-import logging
 
 from common import PaymentCommon, HTML, PaymentResponse
 from cb import CB_RESPONSE_CODES
@@ -29,26 +28,28 @@ contained in the middleware distribution file.
 
 '''
 
-__all__ = [ 'Payment' ]
+__all__ = ['Payment']
 
-BINPATH  = 'binpath'
+BINPATH = 'binpath'
 PATHFILE = 'pathfile'
 AUTHORISATION_ID = 'authorisation_id'
 REQUEST_VALID_PARAMS = ['merchant_id', 'merchant_country', 'amount',
     'currency_code', 'pathfile', 'normal_return_url', 'cancel_return_url',
     'automatic_response_url', 'language', 'payment_means', 'header_flag',
     'capture_day', 'capture_mode', 'bgcolor', 'block_align', 'block_order',
-    'textcolor', 'receipt_complement', 'caddie', 'customer_id', 'customer_email',
-    'customer_ip_address', 'data', 'return_context', 'target', 'order_id']
+    'textcolor', 'receipt_complement', 'caddie', 'customer_id',
+    'customer_email', 'customer_ip_address', 'data', 'return_context',
+    'target', 'order_id']
 
-RESPONSE_PARAMS = [ 'code', 'error', 'merchant_id', 'merchant_country',
+RESPONSE_PARAMS = ['code', 'error', 'merchant_id', 'merchant_country',
     'amount', 'transaction_id', 'payment_means', 'transmission_date',
     'payment_time', 'payment_date', 'response_code', 'payment_certificate',
     AUTHORISATION_ID, 'currency_code', 'card_number', 'cvv_flag',
     'cvv_response_code', 'bank_response_code', 'complementary_code',
     'complementary_info', 'return_context', 'caddie', 'receipt_complement',
-    'merchant_language', 'language', 'customer_id', 'order_id', 'customer_email',
-    'customer_ip_address', 'capture_day', 'capture_mode', 'data', ]
+    'merchant_language', 'language', 'customer_id', 'order_id',
+    'customer_email', 'customer_ip_address', 'capture_day', 'capture_mode',
+    'data', ]
 
 DATA = 'DATA'
 PARAMS = 'params'
@@ -58,9 +59,9 @@ ORDER_ID = 'order_id'
 MERCHANT_ID = 'merchant_id'
 RESPONSE_CODE = 'response_code'
 
-DEFAULT_PARAMS = { 'merchant_id': '014213245611111',
-        'merchant_country': 'fr',
-        'currency_code': '978' }
+DEFAULT_PARAMS = {'merchant_id': '014213245611111',
+                  'merchant_country': 'fr',
+                  'currency_code': '978'}
 
 LOGGER = logging.getLogger(__name__)
 
@@ -80,12 +81,14 @@ FINAREF_BANK_RESPONSE_CODE = {
 '05': 'Compte / Porteur avec statut bloqué ou invalide',
 '11': 'Compte / porteur inconnu',
 '16': 'Provision insuffisante',
-'20': 'Commerçant invalide - Code monnaie incorrect - Opération commerciale inconnue - Opération commerciale invalide',
+'20': 'Commerçant invalide - Code monnaie incorrect - ' + \
+      'Opération commerciale inconnue - Opération commerciale invalide',
 '80': 'Transaction approuvée avec dépassement',
 '81': 'Transaction approuvée avec augmentation capital',
 '82': 'Transaction approuvée NPAI',
 '83': 'Compte / porteur invalide',
 }
+
 
 class Payment(PaymentCommon):
     description = {
@@ -93,13 +96,10 @@ class Payment(PaymentCommon):
             'parameters': [{
                 'name': 'merchand_id',
                 },
-                { 'name': 'merchant_country', },
-                { 'name': 'currency_code', }
+                {'name': 'merchant_country', },
+                {'name': 'currency_code', }
             ],
     }
-
-
-
 
     def __init__(self, options, logger=LOGGER):
         self.options = options
@@ -110,7 +110,7 @@ class Payment(PaymentCommon):
         if PATHFILE in self.options:
             params[PATHFILE] = self.options[PATHFILE]
         executable = os.path.join(self.options[BINPATH], executable)
-        args = [executable] + [ "%s=%s" % p for p in params.iteritems() ]
+        args = [executable] + ["%s=%s" % p for p in params.iteritems()]
         self.logger.debug('executing %s' % args)
         result, _ = subprocess.Popen(args, executable=executable,
                 stdout=subprocess.PIPE, shell=True).communicate()
@@ -128,8 +128,8 @@ class Payment(PaymentCommon):
         transaction_id = self.transaction_id(6, string.digits, 'sips',
                 params[MERCHANT_ID])
         params[TRANSACTION_ID] = transaction_id
-        params[ORDER_ID] = str(uuid.uuid4()).replace('-','')
-        params['amount'] = str(Decimal(amount)*100)
+        params[ORDER_ID] = str(uuid.uuid4()).replace('-', '')
+        params['amount'] = str(Decimal(amount) * 100)
         if email:
             params['customer_email'] = email
         if next_url:
