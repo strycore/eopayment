@@ -133,7 +133,7 @@ class Payment(PaymentCommon):
                 params[MERCHANT_ID])
         params[TRANSACTION_ID] = transaction_id
         params[ORDER_ID] = str(uuid.uuid4()).replace('-', '')
-        params['amount'] = str(Decimal(amount) * 100)
+        params['amount'] = str(int(Decimal(amount) * 100))
         if email:
             params['customer_email'] = email
         if next_url:
