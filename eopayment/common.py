@@ -4,8 +4,8 @@ import random
 import logging
 from datetime import date
 
-__all__ = [ 'PaymentCommon', 'URL', 'HTML', 'RANDOM', 'RECEIVED', 'ACCEPTED',
-'PAID', 'ERROR' ]
+__all__ = ['PaymentCommon', 'URL', 'HTML', 'RANDOM', 'RECEIVED', 'ACCEPTED',
+           'PAID', 'ERROR']
 
 
 LOGGER = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ RECEIVED = 1
 ACCEPTED = 2
 PAID = 3
 ERROR = 99
+
 
 class PaymentResponse(object):
     '''Holds a generic view on the result of payment transaction response.
@@ -82,9 +83,11 @@ class PaymentCommon(object):
         while True:
             parts = [RANDOM.choice(choices) for x in range(length)]
             id = ''.join(parts)
-            name = '%s_%s_%s' % (str(date.today()), '-'.join(prefixes), str(id))
+            name = '%s_%s_%s' % (str(date.today()),
+                                 '-'.join(prefixes), str(id))
             try:
-                fd=os.open(os.path.join(self.PATH, name), os.O_CREAT|os.O_EXCL)
+                fd = os.open(os.path.join(self.PATH, name),
+                             os.O_CREAT | os.O_EXCL)
             except:
                 raise
             else:
