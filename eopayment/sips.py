@@ -142,7 +142,7 @@ class Payment(PaymentCommon):
 
     def response(self, query_string):
         form = urlparse.parse_qs(query_string)
-        params = {'message': form[DATA]}
+        params = {'message': form[DATA][0]}
         result = self.execute('response', params)
         d = dict(zip(RESPONSE_PARAMS, result))
         # The reference identifier for the payment is the authorisation_id
