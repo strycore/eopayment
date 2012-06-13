@@ -114,7 +114,7 @@ class Payment(PaymentCommon):
         self.logger.debug('executing %s' % args)
         result, _ = subprocess.Popen(args, executable=executable,
                 stdout=subprocess.PIPE, shell=True).communicate()
-        result = result.split('!')
+        result = result.strip('!').split('!')
         self.logger.debug('got response %s' % result)
         return result
 
