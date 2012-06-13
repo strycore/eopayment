@@ -152,7 +152,7 @@ class Payment(PaymentCommon):
         response_code_msg = CB_BANK_RESPONSE_CODES.get(d.get(RESPONSE_CODE))
         response = PaymentResponse(
                 result=response_result,
-                signed_result=response_result,
+                signed=response_result,
                 bank_data=d,
                 order_id=d.get(ORDER_ID),
                 transaction_id=d.get(AUTHORISATION_ID),
