@@ -5,8 +5,8 @@ import os.path
 
 from common import URL, HTML
 
-__all__ = [ 'Payment', 'URL', 'HTML', '__version__', 'SIPS', 'SYSTEMPAY',
-    'SPPLUS', 'DUMMY', 'get_backend' ]
+__all__ = ['Payment', 'URL', 'HTML', '__version__', 'SIPS', 'SYSTEMPAY',
+           'SPPLUS', 'DUMMY', 'get_backend']
 
 __version__ = "0.0.12"
 
@@ -17,10 +17,12 @@ SYSTEMPAY = 'systempayv2'
 SPPLUS = 'spplus'
 DUMMY = 'dummy'
 
+
 def get_backend(kind):
     '''Resolve a backend name into a module object'''
     module = __import__(kind, globals(), locals(), [])
     return module.Payment
+
 
 class Payment(object):
     '''
@@ -84,7 +86,7 @@ class Payment(object):
             - the first gives a string value to later match the payment with
               the invoice,
             - kind gives the type of the third value, payment.URL or
-              payment.HTML, 
+              payment.HTML,
             - the third is the URL or the HTML form to contact the payment
               server, which must be sent to the customer browser.
 
@@ -120,7 +122,7 @@ class Payment(object):
           query_string -- the URL encoded form-data from a GET or a POST
 
           It returns a quadruplet of values:
-          
+
              (result, transaction_id, bank_data, return_content)
 
            - result is a boolean stating whether the transaction worked, use it
@@ -141,7 +143,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     spplus_options = {
         'cle': '58 6d fc 9c 34 91 9b 86 3f fd 64 \
-63 c9 13 4a 26 ba 29 74 1e c7 e9 80 79', 
+63 c9 13 4a 26 ba 29 74 1e c7 e9 80 79',
         'siret': '00000000000001-01',
     }
     p = Payment(kind=SPPLUS, options=spplus_options)
@@ -149,7 +151,7 @@ if __name__ == '__main__':
             next_url='https://my-site.com')
     systempay_options = {
         'secrets': {
-            'TEST': '1234567890123456', 
+            'TEST': '1234567890123456',
             'PRODUCTION': 'yyy'
         },
         'site_id': '00001234',
@@ -160,7 +162,7 @@ if __name__ == '__main__':
     print p.request('10.00', email='bob@example.com',
             next_url='https://my-site.com')
 
-    sips_options = { 'filepath': '/', 'binpath': os.path.dirname(__file__) }
+    sips_options = {'filepath': '/', 'binpath': os.path.dirname(__file__)}
     p = Payment(kind=SIPS, options=sips_options)
     print p.request('10.00', email='bob@example.com',
             next_url='https://my-site.com')
