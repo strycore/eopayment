@@ -114,10 +114,14 @@ class Payment(PaymentCommon):
         self.logger.debug('executing %s' % args)
         result,_ = subprocess.Popen(' '.join(args),
                 stdout=subprocess.PIPE, shell=True).communicate()
-        if result[0] == '!':
-            result = result[1:]
-        if result[-1] == '!':
-            result = result[:-1]
+        try:
+            if result[0] == '!':
+                result = result[1:]
+            if result[-1] == '!':
+                result = result[:-1]
+        except IndexError:
+            raise ValueError("Invalid response", result)
+            return False
         result = result.split('!')
         self.logger.debug('got response %s' % result)
         return result
